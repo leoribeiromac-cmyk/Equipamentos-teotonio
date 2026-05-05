@@ -3,149 +3,384 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apontamento de Equipamentos</title>
+    <title>Apontamento de Equipamentos Premium</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-glow: #8b5cf6;
+            --secondary-glow: #06b6d4;
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
+            font-family: 'Outfit', sans-serif;
+            background-color: #030712;
+            color: #e2e8f0;
+            overflow-x: hidden;
         }
         
-        .loader {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3b82f6;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: none;
-            vertical-align: middle;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        /* Toast notification styles */
-        #toast {
-            visibility: hidden;
-            min-width: 250px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 8px;
-            padding: 16px;
+        /* Aurora Background Animations */
+        .aurora-bg {
             position: fixed;
-            z-index: 50;
-            left: 50%;
-            bottom: 30px;
-            transform: translateX(-50%);
-            opacity: 0;
-            transition: opacity 0.3s, bottom 0.3s;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            overflow: hidden;
+            background: #030712;
         }
-        #toast.show {
-            visibility: visible;
-            opacity: 1;
-            bottom: 50px;
+        .aurora-blob {
+            position: absolute;
+            filter: blur(100px);
+            opacity: 0.5;
+            animation: float 20s infinite ease-in-out alternate;
         }
-        #toast.success { background-color: #10b981; }
-        #toast.error { background-color: #ef4444; }
+        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(139,92,246,0.4) 0%, rgba(0,0,0,0) 70%); animation-delay: 0s; }
+        .blob-2 { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(6,182,212,0.3) 0%, rgba(0,0,0,0) 70%); animation-delay: -5s; }
+        .blob-3 { top: 40%; left: 30%; width: 40vw; height: 40vw; background: radial-gradient(circle, rgba(59,130,246,0.3) 0%, rgba(0,0,0,0) 70%); animation-delay: -10s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(5%, 10%) scale(1.1); }
+            100% { transform: translate(-5%, -5%) scale(0.9); }
+        }
+
+        /* Ultimate Glass Panel */
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.4);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 
+                0 4px 24px -1px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+        }
+
+        /* Inputs Premium */
+        .glass-input {
+            background: rgba(3, 7, 18, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .glass-input:focus {
+            background: rgba(15, 23, 42, 0.8);
+            border-color: var(--secondary-glow);
+            box-shadow: 
+                0 0 0 1px var(--secondary-glow),
+                0 0 20px -5px rgba(6, 182, 212, 0.4),
+                inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+            transform: translateY(-1px);
+        }
+
+        /* Animated Gradient Button */
+        .btn-gradient {
+            background: linear-gradient(270deg, #8b5cf6, #3b82f6, #06b6d4, #8b5cf6);
+            background-size: 300% 300%;
+            animation: gradientMove 6s ease infinite;
+            position: relative;
+            z-index: 1;
+        }
+        .btn-gradient::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(270deg, #8b5cf6, #3b82f6, #06b6d4, #8b5cf6);
+            background-size: 300% 300%;
+            animation: gradientMove 6s ease infinite;
+            z-index: -1;
+            filter: blur(15px);
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+        }
+        .btn-gradient:hover::before { opacity: 1; }
+
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Custom Icons and Details */
+        .input-icon {
+            transition: color 0.3s ease;
+        }
+        .glass-input:focus ~ .input-icon,
+        .glass-input:focus + div .input-icon {
+            color: var(--secondary-glow);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.3); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.6); }
+        ::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.5; cursor: pointer; transition: 0.3s; }
+        ::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
+        /* Loader & Toast (Mantidos mas estilizados) */
+        .loader { border: 2px solid rgba(255,255,255,0.2); border-top: 2px solid #fff; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #toast { visibility: hidden; transform: translateY(100px); opacity: 0; transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        #toast.show { visibility: visible; transform: translateY(0); opacity: 1; }
     </style>
 </head>
-<body class="text-gray-800 antialiased min-h-screen flex flex-col">
+<body class="antialiased min-h-screen flex flex-col selection:bg-cyan-500/30 selection:text-cyan-200">
 
-    <!-- Navbar -->
-    <nav class="bg-blue-600 text-white shadow-md">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center space-x-3">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"></path>
-                    </svg>
-                    <span class="font-bold text-lg tracking-wide">Gestão de Frotas</span>
+    <!-- Fundo Aurora -->
+    <div class="aurora-bg">
+        <div class="aurora-blob blob-1"></div>
+        <div class="aurora-blob blob-2"></div>
+        <div class="aurora-blob blob-3"></div>
+    </div>
+
+    <!-- Topbar Luxuosa -->
+    <nav class="border-b border-white/5 bg-slate-950/30 backdrop-blur-3xl sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto px-6 lg:px-8">
+            <div class="flex justify-between h-24 items-center">
+                <div class="flex items-center space-x-5">
+                    <div class="relative group">
+                        <div class="absolute inset-0 bg-gradient-to-r from-violet-500 to-cyan-500 rounded-2xl blur-md opacity-50 group-hover:opacity-100 transition duration-500"></div>
+                        <div class="relative p-3 bg-slate-900 rounded-2xl border border-white/10">
+                            <i class="ph ph-hexagon text-3xl bg-clip-text text-transparent bg-gradient-to-br from-violet-400 to-cyan-400" style="background-clip: text; -webkit-text-fill-color: transparent; display: inline-block;"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-2xl tracking-tight text-white flex items-center gap-2">
+                            Frota<span class="font-light text-slate-400">Sync</span>
+                        </h1>
+                        <p class="text-xs font-medium text-cyan-400/80 tracking-widest uppercase mt-0.5">Terminal Operacional</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3 bg-slate-900/50 px-4 py-2 rounded-full border border-white/5 shadow-inner">
+                    <span class="relative flex h-2.5 w-2.5">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                    </span>
+                    <span class="text-xs font-semibold text-slate-300 tracking-wide uppercase">Sistema Online</span>
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <main class="flex-grow container mx-auto px-4 py-8 max-w-xl">
-        <div class="bg-white rounded-xl shadow-lg p-6 sm:p-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Lançamento de Diária</h2>
+    <main class="flex-grow container mx-auto px-4 py-10 max-w-4xl relative z-10">
+        
+        <div class="glass-panel rounded-[2rem] p-8 sm:p-12">
             
-            <form id="apontamentoForm" class="space-y-5">
+            <div class="mb-12 text-center sm:text-left flex flex-col sm:flex-row justify-between items-center gap-6">
+                <div>
+                    <h2 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-500 tracking-tight">Diária de Equipamento</h2>
+                    <p class="text-slate-400 mt-3 text-sm font-light tracking-wide">Preencha o formulário abaixo para sincronizar com a base de dados.</p>
+                </div>
+                <div class="relative group">
+                    <div class="absolute inset-0 bg-cyan-500/20 rounded-3xl blur-xl group-hover:bg-cyan-500/30 transition duration-500"></div>
+                    <div class="relative bg-slate-900/80 backdrop-blur-sm border border-cyan-500/30 px-8 py-4 rounded-3xl text-center shadow-2xl">
+                        <p class="text-[10px] text-cyan-400 uppercase tracking-[0.2em] font-bold mb-1 opacity-80">Horas Apuradas</p>
+                        <p class="text-4xl font-light text-white" id="horasDisplay">0.00<span class="text-xl text-slate-500 ml-1">h</span></p>
+                    </div>
+                </div>
+            </div>
+            
+            <form id="apontamentoForm" class="space-y-10">
                 
-                <!-- Data -->
-                <div>
-                    <label for="data" class="block text-sm font-medium text-gray-700 mb-1">Data do Apontamento</label>
-                    <input type="date" id="data" name="data" required 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors">
+                <!-- SESSÃO 1: DADOS GERAIS -->
+                <div class="space-y-6">
+                    <div class="flex items-center gap-4 mb-8">
+                        <div class="h-px bg-gradient-to-r from-violet-500/50 to-transparent flex-grow"></div>
+                        <h3 class="text-sm font-bold uppercase tracking-widest text-violet-300 flex items-center gap-2">
+                            <i class="ph ph-identification-badge text-lg"></i> Identificação
+                        </h3>
+                        <div class="h-px bg-gradient-to-l from-violet-500/50 to-transparent flex-grow"></div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                        <!-- Data -->
+                        <div class="relative">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 ml-1">Data do Serviço</label>
+                            <div class="relative group">
+                                <input type="date" id="data" name="data" required 
+                                    class="glass-input peer w-full pl-12 pr-4 py-4 rounded-2xl outline-none">
+                                <i class="ph ph-calendar-blank absolute left-4 top-1/2 -translate-y-1/2 text-xl text-slate-500 input-icon pointer-events-none"></i>
+                            </div>
+                        </div>
+
+                        <!-- Turno -->
+                        <div class="relative">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 ml-1">Turno Operacional</label>
+                            <div class="relative group">
+                                <select id="turno" required class="glass-input peer w-full pl-12 pr-10 py-4 rounded-2xl outline-none appearance-none cursor-pointer">
+                                    <option value="" disabled selected class="bg-slate-900 text-slate-500">Selecione o turno...</option>
+                                    <option value="Manhã" class="bg-slate-800 text-white">1º Turno (06:00 - 14:00)</option>
+                                    <option value="Tarde" class="bg-slate-800 text-white">2º Turno (14:00 - 22:00)</option>
+                                    <option value="Noite" class="bg-slate-800 text-white">3º Turno (22:00 - 06:00)</option>
+                                    <option value="Comercial" class="bg-slate-800 text-white">Turno Comercial (08:00 - 18:00)</option>
+                                </select>
+                                <i class="ph ph-sun absolute left-4 top-1/2 -translate-y-1/2 text-xl text-slate-500 input-icon pointer-events-none"></i>
+                                <i class="ph ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
+                            </div>
+                        </div>
+
+                        <!-- Equipamento -->
+                        <div class="relative">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 ml-1">Equipamento</label>
+                            <div class="relative group">
+                                <select id="equipamento" name="equipamento" required class="glass-input peer w-full pl-12 pr-10 py-4 rounded-2xl outline-none appearance-none cursor-pointer">
+                                    <option value="" disabled selected class="bg-slate-900 text-slate-500">Selecione o ativo...</option>
+                                    <optgroup label="Linha Amarela" class="bg-slate-900 text-violet-300 font-semibold">
+                                        <option value="Escavadeira Hidráulica 01" class="bg-slate-800 text-white font-normal">Escavadeira Hidráulica 01</option>
+                                        <option value="Retroescavadeira 02" class="bg-slate-800 text-white font-normal">Retroescavadeira 02</option>
+                                        <option value="Trator de Esteira D6" class="bg-slate-800 text-white font-normal">Trator de Esteira D6</option>
+                                        <option value="Motoniveladora 140K" class="bg-slate-800 text-white font-normal">Motoniveladora 140K</option>
+                                        <option value="Rolo Compactador" class="bg-slate-800 text-white font-normal">Rolo Compactador</option>
+                                    </optgroup>
+                                    <optgroup label="Transporte" class="bg-slate-900 text-cyan-300 font-semibold mt-2">
+                                        <option value="Caminhão Basculante 10m3" class="bg-slate-800 text-white font-normal">Caminhão Basculante 10m³</option>
+                                    </optgroup>
+                                </select>
+                                <i class="ph ph-tractor absolute left-4 top-1/2 -translate-y-1/2 text-xl text-slate-500 input-icon pointer-events-none"></i>
+                                <i class="ph ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
+                            </div>
+                        </div>
+
+                        <!-- Operador -->
+                        <div class="relative">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 ml-1">Operador Responsável</label>
+                            <div class="relative group">
+                                <input type="text" id="operador" name="operador" placeholder="Nome completo" required
+                                    class="glass-input peer w-full pl-12 pr-4 py-4 rounded-2xl outline-none placeholder:text-slate-600">
+                                <i class="ph ph-user-circle absolute left-4 top-1/2 -translate-y-1/2 text-xl text-slate-500 input-icon pointer-events-none"></i>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Equipamento -->
-                <div>
-                    <label for="equipamento" class="block text-sm font-medium text-gray-700 mb-1">Equipamento</label>
-                    <select id="equipamento" name="equipamento" required
-                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
-                        <option value="" disabled selected>Selecione um equipamento</option>
-                        <option value="Escavadeira Hidráulica 01">Escavadeira Hidráulica 01</option>
-                        <option value="Retroescavadeira 02">Retroescavadeira 02</option>
-                        <option value="Trator de Esteira D6">Trator de Esteira D6</option>
-                        <option value="Caminhão Basculante 10m3">Caminhão Basculante 10m³</option>
-                        <option value="Motoniveladora 140K">Motoniveladora 140K</option>
-                        <option value="Rolo Compactador">Rolo Compactador</option>
-                    </select>
+                <!-- SESSÃO 2: HORÁRIOS -->
+                <div class="space-y-6 pt-6">
+                    <div class="flex items-center gap-4 mb-8">
+                        <div class="h-px bg-gradient-to-r from-cyan-500/50 to-transparent flex-grow"></div>
+                        <h3 class="text-sm font-bold uppercase tracking-widest text-cyan-300 flex items-center gap-2">
+                            <i class="ph ph-clock text-lg"></i> Cronometria
+                        </h3>
+                        <div class="h-px bg-gradient-to-l from-cyan-500/50 to-transparent flex-grow"></div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Card Horário Trabalho -->
+                        <div class="bg-slate-900/40 p-6 rounded-[2rem] border border-white/5 relative overflow-hidden group hover:border-emerald-500/30 transition duration-500">
+                            <div class="absolute top-0 left-0 w-1 h-full bg-emerald-500/50 group-hover:bg-emerald-400 transition"></div>
+                            <div class="text-sm font-semibold text-emerald-400 mb-5 flex items-center uppercase tracking-wider">
+                                <i class="ph ph-play-circle text-xl mr-2"></i> Período Trabalhado
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[10px] uppercase tracking-widest text-slate-500 mb-2 ml-1">Início</label>
+                                    <input type="time" id="inicio" required onchange="calcularHoras()"
+                                        class="glass-input w-full px-4 py-3 rounded-xl outline-none text-center font-mono text-lg text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] uppercase tracking-widest text-slate-500 mb-2 ml-1">Fim</label>
+                                    <input type="time" id="fim" required onchange="calcularHoras()"
+                                        class="glass-input w-full px-4 py-3 rounded-xl outline-none text-center font-mono text-lg text-white">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Horário Parada -->
+                        <div class="bg-slate-900/40 p-6 rounded-[2rem] border border-white/5 relative overflow-hidden group hover:border-rose-500/30 transition duration-500">
+                            <div class="absolute top-0 left-0 w-1 h-full bg-rose-500/50 group-hover:bg-rose-400 transition"></div>
+                            <div class="text-sm font-semibold text-rose-400 mb-5 flex items-center uppercase tracking-wider justify-between">
+                                <div class="flex items-center"><i class="ph ph-pause-circle text-xl mr-2"></i> Tempo de Parada</div>
+                                <span class="text-[9px] bg-rose-500/10 text-rose-300 px-2 py-1 rounded-md border border-rose-500/20">Opcional</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[10px] uppercase tracking-widest text-slate-500 mb-2 ml-1">Início Parada</label>
+                                    <input type="time" id="inicioParada" onchange="calcularHoras()"
+                                        class="glass-input w-full px-4 py-3 rounded-xl outline-none text-center font-mono text-lg text-slate-300">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] uppercase tracking-widest text-slate-500 mb-2 ml-1">Fim Parada</label>
+                                    <input type="time" id="fimParada" onchange="calcularHoras()"
+                                        class="glass-input w-full px-4 py-3 rounded-xl outline-none text-center font-mono text-lg text-slate-300">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" id="horas" name="horas" value="0">
                 </div>
 
-                <!-- Operador -->
-                <div>
-                    <label for="operador" class="block text-sm font-medium text-gray-700 mb-1">Operador / Motorista</label>
-                    <input type="text" id="operador" name="operador" placeholder="Nome do operador" required
-                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none">
-                </div>
+                <!-- SESSÃO 3: OCORRÊNCIAS -->
+                <div class="space-y-6 pt-6">
+                    <div class="flex items-center gap-4 mb-8">
+                        <div class="h-px bg-gradient-to-r from-blue-500/50 to-transparent flex-grow"></div>
+                        <h3 class="text-sm font-bold uppercase tracking-widest text-blue-300 flex items-center gap-2">
+                            <i class="ph ph-clipboard-text text-lg"></i> Reporte Final
+                        </h3>
+                        <div class="h-px bg-gradient-to-l from-blue-500/50 to-transparent flex-grow"></div>
+                    </div>
 
-                <!-- Horas Trabalhadas / KM -->
-                <div>
-                    <label for="horas" class="block text-sm font-medium text-gray-700 mb-1">Horas Trabalhadas (ou KM)</label>
-                    <input type="number" id="horas" name="horas" step="0.5" min="0" placeholder="Ex: 8.5" required
-                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none">
-                </div>
+                    <div class="grid grid-cols-1 gap-8">
+                        <!-- Status -->
+                        <div class="relative">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 ml-1">Status do Equipamento ao Fim do Turno</label>
+                            <div class="relative group">
+                                <select id="status" name="status" required class="glass-input peer w-full pl-12 pr-10 py-4 rounded-2xl outline-none appearance-none cursor-pointer font-medium">
+                                    <option value="OperandoNormalmente" class="bg-slate-900 text-emerald-400">🟢 Operando Normalmente</option>
+                                    <option value="ManutencaoCorretiva" class="bg-slate-900 text-rose-400">🔴 Manutenção Corretiva (Quebrado)</option>
+                                    <option value="ManutencaoPreventiva" class="bg-slate-900 text-amber-400">🟡 Manutenção Preventiva (Programada)</option>
+                                    <option value="ParadoChuva" class="bg-slate-900 text-blue-400">🌧️ Parado por Condições Climáticas</option>
+                                    <option value="FaltaOperador" class="bg-slate-900 text-orange-400">👤 Ocioso por Falta de Operador</option>
+                                    <option value="FaltaFrenteServico" class="bg-slate-900 text-slate-400">🚧 Ocioso por Falta de Demanda/Frente</option>
+                                </select>
+                                <i class="ph ph-activity absolute left-4 top-1/2 -translate-y-1/2 text-xl text-slate-500 input-icon pointer-events-none"></i>
+                                <i class="ph ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
+                            </div>
+                        </div>
 
-                <!-- Status -->
-                <div>
-                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status Operacional</label>
-                    <select id="status" name="status" required
-                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
-                        <option value="OperandoNormalmente">Operando Normalmente</option>
-                        <option value="ManutencaoCorretiva">Manutenção Corretiva</option>
-                        <option value="ManutencaoPreventiva">Manutenção Preventiva</option>
-                        <option value="ParadoChuva">Parado por Chuva</option>
-                        <option value="FaltaOperador">Falta de Operador</option>
-                        <option value="FaltaFrenteServico">Falta de Frente de Serviço</option>
-                    </select>
-                </div>
-
-                <!-- Observações -->
-                <div>
-                    <label for="observacoes" class="block text-sm font-medium text-gray-700 mb-1">Observações / Local de Serviço</label>
-                    <textarea id="observacoes" name="observacoes" rows="3" placeholder="Detalhes do serviço ou motivo da parada..."
-                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"></textarea>
+                        <!-- Observações -->
+                        <div class="relative">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 ml-1 flex justify-between">
+                                Relatório de Atividades / Justificativas
+                                <span class="text-indigo-400/70 lowercase text-[10px] font-normal tracking-normal"><i class="ph ph-magic-wand mr-1"></i>horários são anexados aqui auto.</span>
+                            </label>
+                            <textarea id="observacoesUI" rows="3" placeholder="Descreva os locais de trabalho, km inicial/final, ou detalhes do problema mecânico..."
+                                class="glass-input w-full p-5 rounded-2xl outline-none resize-none leading-relaxed placeholder:text-slate-600"></textarea>
+                            
+                            <input type="hidden" id="observacoes" name="observacoes">
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Botão Enviar -->
-                <button type="submit" id="submitBtn" 
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-md transition duration-200 flex justify-center items-center">
-                    <span id="btnText">Registrar Apontamento</span>
-                    <div id="spinner" class="loader ml-2"></div>
-                </button>
+                <div class="pt-8 mt-4 border-t border-white/5">
+                    <button type="submit" id="submitBtn" 
+                        class="btn-gradient w-full text-white font-bold tracking-widest uppercase py-5 px-6 rounded-2xl shadow-[0_0_40px_-10px_rgba(139,92,246,0.6)] transition-all duration-300 transform hover:-translate-y-1 flex justify-center items-center overflow-hidden">
+                        <span id="btnText" class="relative flex items-center text-sm">
+                            <i class="ph ph-cloud-arrow-up text-xl mr-3"></i> Transmitir Apontamento
+                        </span>
+                        <div id="spinner" class="loader ml-4 relative"></div>
+                    </button>
+                </div>
             </form>
+        </div>
+        
+        <!-- Footer info -->
+        <div class="text-center mt-10 mb-6 text-slate-500/50 text-xs font-medium tracking-widest uppercase">
+            <p>SGA Frota &copy; 2024 &bull; Transmissão Segura E2E</p>
         </div>
     </main>
 
     <!-- Toast Notification -->
-    <div id="toast">Mensagem do sistema</div>
+    <div id="toast" class="fixed bottom-8 right-8 z-50 flex items-center p-5 rounded-2xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7)] backdrop-blur-xl border border-white/10 max-w-sm">
+        <div id="toastIcon" class="flex items-center justify-center flex-shrink-0 w-12 h-12 rounded-xl mr-4 shadow-inner"></div>
+        <div id="toastMessage" class="text-sm font-medium leading-relaxed tracking-wide text-slate-200"></div>
+    </div>
 
     <script>
-        // === A URL DO SEU APP SCRIPT FOI CONFIGURADA AQUI ===
+        // === A URL DO SEU APP SCRIPT AQUI ===
         const scriptURL = 'https://script.google.com/macros/s/AKfycbyoEQczQ-OkWJUsoxEIjoQkpDHv_HeUAak1ejHE8OE0ZSGCfo4FnGmJ8O-u2fusVc9gCg/exec';
         
         const form = document.forms['apontamentoForm'];
@@ -153,64 +388,132 @@
         const btnText = document.getElementById('btnText');
         const spinner = document.getElementById('spinner');
         const toast = document.getElementById('toast');
+        const toastIcon = document.getElementById('toastIcon');
+        const toastMessage = document.getElementById('toastMessage');
 
-        // Configurar a data padrão para hoje
+        // Inicializações
         document.getElementById('data').valueAsDate = new Date();
+
+        // Conversor de Horas
+        function timeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return (hours * 60) + minutes;
+        }
+
+        // Lógica de Cálculo de Horas Líquidas
+        function calcularHoras() {
+            const start = document.getElementById('inicio').value;
+            const end = document.getElementById('fim').value;
+            const stopStart = document.getElementById('inicioParada').value;
+            const stopEnd = document.getElementById('fimParada').value;
+            const displayElt = document.getElementById('horasDisplay');
+
+            if (!start || !end) {
+                document.getElementById('horas').value = 0;
+                displayElt.innerHTML = '0.00<span class="text-xl text-slate-500 ml-1">h</span>';
+                return;
+            }
+
+            let workMins = timeToMinutes(end) - timeToMinutes(start);
+            if (workMins < 0) workMins += 24 * 60; 
+
+            let stopMins = 0;
+            if (stopStart && stopEnd) {
+                stopMins = timeToMinutes(stopEnd) - timeToMinutes(stopStart);
+                if (stopMins < 0) stopMins += 24 * 60;
+            }
+
+            let totalMins = workMins - stopMins;
+            if (totalMins < 0) totalMins = 0;
+
+            const totalHours = (totalMins / 60).toFixed(2);
+            
+            document.getElementById('horas').value = totalHours; 
+            displayElt.innerHTML = `${totalHours}<span class="text-xl text-cyan-500 ml-1">h</span>`;
+            
+            // Animação de glow ao atualizar
+            displayElt.parentElement.classList.add('shadow-[0_0_30px_rgba(6,182,212,0.5)]');
+            setTimeout(() => displayElt.parentElement.classList.remove('shadow-[0_0_30px_rgba(6,182,212,0.5)]'), 400);
+        }
 
         form.addEventListener('submit', e => {
             e.preventDefault();
 
-            // Validação de URL
             if (!scriptURL || scriptURL === 'COLE_AQUI_A_URL_DO_SEU_WEB_APP') {
-                showToast('ERRO: Você precisa configurar a URL do App Script no código fonte.', 'error');
+                showToast('Falha na autenticação: Endpoint não configurado.', 'error');
                 return;
             }
 
-            // Iniciar estado de carregamento
-            setLoading(true);
+            // Formatação inteligente da observação para a planilha
+            const turno = document.getElementById('turno').value;
+            const inicio = document.getElementById('inicio').value;
+            const fim = document.getElementById('fim').value;
+            const iParada = document.getElementById('inicioParada').value || '--:--';
+            const fParada = document.getElementById('fimParada').value || '--:--';
+            const obsUsuario = document.getElementById('observacoesUI').value;
+            
+            const textoDetalhado = `[Turno: ${turno}] | Operação: ${inicio} às ${fim} | Parada: ${iParada} às ${fParada}\nDetalhes: ${obsUsuario ? obsUsuario : 'Sem detalhes adicionais.'}`;
+            
+            document.getElementById('observacoes').value = textoDetalhado;
 
-            // Preparar dados
+            setLoading(true);
             const formData = new FormData(form);
 
-            // Enviar para o Google Sheets via App Script
             fetch(scriptURL, { method: 'POST', body: formData })
                 .then(response => {
-                    showToast('Apontamento registrado com sucesso!', 'success');
-                    // Resetar formulário mas manter a data de hoje
+                    showToast('Transmissão concluída com sucesso!', 'success');
+                    
+                    const tempDate = document.getElementById('data').value;
                     form.reset();
-                    document.getElementById('data').valueAsDate = new Date();
+                    document.getElementById('data').value = tempDate;
                     document.getElementById('status').value = "OperandoNormalmente";
+                    document.getElementById('horasDisplay').innerHTML = '0.00<span class="text-xl text-slate-500 ml-1">h</span>';
                 })
                 .catch(error => {
                     console.error('Error!', error.message);
-                    showToast('Erro ao enviar. Verifique sua internet e tente novamente.', 'error');
+                    showToast('Erro de conexão com o servidor. Tente novamente.', 'error');
                 })
                 .finally(() => {
                     setLoading(false);
                 });
         });
 
-        // Funções auxiliares de UI
         function setLoading(isLoading) {
             if (isLoading) {
                 submitBtn.disabled = true;
-                submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
-                btnText.textContent = 'Enviando...';
+                submitBtn.style.animation = 'none';
+                submitBtn.style.background = '#1e293b';
+                submitBtn.style.boxShadow = 'none';
+                submitBtn.classList.add('cursor-wait');
+                btnText.innerHTML = 'Estabelecendo Conexão...';
                 spinner.style.display = 'inline-block';
             } else {
                 submitBtn.disabled = false;
-                submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
-                btnText.textContent = 'Registrar Apontamento';
+                submitBtn.style.animation = '';
+                submitBtn.style.background = '';
+                submitBtn.classList.remove('cursor-wait');
+                btnText.innerHTML = '<i class="ph ph-cloud-arrow-up text-xl mr-3"></i> Transmitir Apontamento';
                 spinner.style.display = 'none';
             }
         }
 
         function showToast(message, type) {
-            toast.textContent = message;
-            toast.className = 'show ' + type;
-            setTimeout(function(){ 
-                toast.className = toast.className.replace('show', ''); 
-            }, 4000);
+            toastMessage.textContent = message;
+            
+            if (type === 'success') {
+                toast.className = 'fixed bottom-8 right-8 z-50 flex items-center p-5 rounded-2xl shadow-[0_20px_50px_-10px_rgba(16,185,129,0.3)] backdrop-blur-xl border border-emerald-500/30 bg-emerald-950/80 show';
+                toastIcon.className = 'flex items-center justify-center flex-shrink-0 w-12 h-12 rounded-xl mr-4 bg-emerald-900 border border-emerald-500/50 text-emerald-400';
+                toastIcon.innerHTML = '<i class="ph ph-check-circle text-3xl"></i>';
+            } else {
+                toast.className = 'fixed bottom-8 right-8 z-50 flex items-center p-5 rounded-2xl shadow-[0_20px_50px_-10px_rgba(244,63,94,0.3)] backdrop-blur-xl border border-rose-500/30 bg-rose-950/80 show';
+                toastIcon.className = 'flex items-center justify-center flex-shrink-0 w-12 h-12 rounded-xl mr-4 bg-rose-900 border border-rose-500/50 text-rose-400';
+                toastIcon.innerHTML = '<i class="ph ph-warning-circle text-3xl"></i>';
+            }
+
+            setTimeout(() => { 
+                toast.classList.remove('show'); 
+            }, 5000);
         }
     </script>
 </body>
