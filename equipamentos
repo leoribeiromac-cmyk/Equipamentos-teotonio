@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apontamento de Equipamentos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none;
+            vertical-align: middle;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Toast notification styles */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 16px;
+            position: fixed;
+            z-index: 50;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s;
+        }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 50px;
+        }
+        #toast.success { background-color: #10b981; }
+        #toast.error { background-color: #ef4444; }
+    </style>
+</head>
+<body class="text-gray-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white shadow-md">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"></path>
+                    </svg>
+                    <span class="font-bold text-lg tracking-wide">Gestão de Frotas</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-xl">
+        <div class="bg-white rounded-xl shadow-lg p-6 sm:p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Lançamento de Diária</h2>
+            
+            <form id="apontamentoForm" class="space-y-5">
+                
+                <!-- Data -->
+                <div>
+                    <label for="data" class="block text-sm font-medium text-gray-700 mb-1">Data do Apontamento</label>
+                    <input type="date" id="data" name="data" required 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors">
+                </div>
+
+                <!-- Equipamento -->
+                <div>
+                    <label for="equipamento" class="block text-sm font-medium text-gray-700 mb-1">Equipamento</label>
+                    <select id="equipamento" name="equipamento" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                        <option value="" disabled selected>Selecione um equipamento</option>
+                        <option value="Escavadeira Hidráulica 01">Escavadeira Hidráulica 01</option>
+                        <option value="Retroescavadeira 02">Retroescavadeira 02</option>
+                        <option value="Trator de Esteira D6">Trator de Esteira D6</option>
+                        <option value="Caminhão Basculante 10m3">Caminhão Basculante 10m³</option>
+                        <option value="Motoniveladora 140K">Motoniveladora 140K</option>
+                        <option value="Rolo Compactador">Rolo Compactador</option>
+                    </select>
+                </div>
+
+                <!-- Operador -->
+                <div>
+                    <label for="operador" class="block text-sm font-medium text-gray-700 mb-1">Operador / Motorista</label>
+                    <input type="text" id="operador" name="operador" placeholder="Nome do operador" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+
+                <!-- Horas Trabalhadas / KM -->
+                <div>
+                    <label for="horas" class="block text-sm font-medium text-gray-700 mb-1">Horas Trabalhadas (ou KM)</label>
+                    <input type="number" id="horas" name="horas" step="0.5" min="0" placeholder="Ex: 8.5" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+
+                <!-- Status -->
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status Operacional</label>
+                    <select id="status" name="status" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                        <option value="OperandoNormalmente">Operando Normalmente</option>
+                        <option value="ManutencaoCorretiva">Manutenção Corretiva</option>
+                        <option value="ManutencaoPreventiva">Manutenção Preventiva</option>
+                        <option value="ParadoChuva">Parado por Chuva</option>
+                        <option value="FaltaOperador">Falta de Operador</option>
+                        <option value="FaltaFrenteServico">Falta de Frente de Serviço</option>
+                    </select>
+                </div>
+
+                <!-- Observações -->
+                <div>
+                    <label for="observacoes" class="block text-sm font-medium text-gray-700 mb-1">Observações / Local de Serviço</label>
+                    <textarea id="observacoes" name="observacoes" rows="3" placeholder="Detalhes do serviço ou motivo da parada..."
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"></textarea>
+                </div>
+
+                <!-- Botão Enviar -->
+                <button type="submit" id="submitBtn" 
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-md transition duration-200 flex justify-center items-center">
+                    <span id="btnText">Registrar Apontamento</span>
+                    <div id="spinner" class="loader ml-2"></div>
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast">Mensagem do sistema</div>
+
+    <script>
+        // === A URL DO SEU APP SCRIPT FOI CONFIGURADA AQUI ===
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyoEQczQ-OkWJUsoxEIjoQkpDHv_HeUAak1ejHE8OE0ZSGCfo4FnGmJ8O-u2fusVc9gCg/exec';
+        
+        const form = document.forms['apontamentoForm'];
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const spinner = document.getElementById('spinner');
+        const toast = document.getElementById('toast');
+
+        // Configurar a data padrão para hoje
+        document.getElementById('data').valueAsDate = new Date();
+
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+
+            // Validação de URL
+            if (!scriptURL || scriptURL === 'COLE_AQUI_A_URL_DO_SEU_WEB_APP') {
+                showToast('ERRO: Você precisa configurar a URL do App Script no código fonte.', 'error');
+                return;
+            }
+
+            // Iniciar estado de carregamento
+            setLoading(true);
+
+            // Preparar dados
+            const formData = new FormData(form);
+
+            // Enviar para o Google Sheets via App Script
+            fetch(scriptURL, { method: 'POST', body: formData })
+                .then(response => {
+                    showToast('Apontamento registrado com sucesso!', 'success');
+                    // Resetar formulário mas manter a data de hoje
+                    form.reset();
+                    document.getElementById('data').valueAsDate = new Date();
+                    document.getElementById('status').value = "OperandoNormalmente";
+                })
+                .catch(error => {
+                    console.error('Error!', error.message);
+                    showToast('Erro ao enviar. Verifique sua internet e tente novamente.', 'error');
+                })
+                .finally(() => {
+                    setLoading(false);
+                });
+        });
+
+        // Funções auxiliares de UI
+        function setLoading(isLoading) {
+            if (isLoading) {
+                submitBtn.disabled = true;
+                submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+                btnText.textContent = 'Enviando...';
+                spinner.style.display = 'inline-block';
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                btnText.textContent = 'Registrar Apontamento';
+                spinner.style.display = 'none';
+            }
+        }
+
+        function showToast(message, type) {
+            toast.textContent = message;
+            toast.className = 'show ' + type;
+            setTimeout(function(){ 
+                toast.className = toast.className.replace('show', ''); 
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
