@@ -988,6 +988,7 @@
                         <div class="min-w-0">
                             <p class="text-sm font-medium text-white truncate">${escapeHtml(a.equipamento)} <span class="text-slate-500 font-normal">· ${escapeHtml(String(a.horas))}h</span></p>
                             <p class="text-[11px] text-slate-500 truncate">${formatarData(a.data)} · ${escapeHtml(a.turno)} · ${escapeHtml(a.operador)} · ${rotuloStatus(a.status)}</p>
+                            ${a.assinatura && String(a.assinatura).indexOf('http') === 0 ? `<a href="${escapeHtml(a.assinatura)}" target="_blank" rel="noopener" class="text-[11px] text-cyan-400 hover:text-cyan-300 inline-flex items-center gap-1 mt-0.5"><i class="ph ph-signature"></i> ver assinatura</a>` : ''}
                         </div>
                         <button type="button" data-carimbo="${a.carimbo}" class="btn-apagar-apont ml-3 p-2 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition flex-shrink-0" title="Apagar este apontamento"><i class="ph ph-trash"></i></button>
                     </div>`).join('');
