@@ -215,12 +215,10 @@
                         <div class="relative">
                             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 ml-1">Turno Operacional</label>
                             <div class="relative group">
-                                <select id="turno" name="turno" required class="glass-input peer w-full pl-12 pr-10 py-4 rounded-2xl outline-none appearance-none cursor-pointer">
+                                <select id="turno" name="turno" required onchange="aplicarTurno()" class="glass-input peer w-full pl-12 pr-10 py-4 rounded-2xl outline-none appearance-none cursor-pointer">
                                     <option value="" disabled selected class="bg-slate-900 text-slate-500">Selecione o turno...</option>
-                                    <option value="Manhã" class="bg-slate-800 text-white">1º Turno (06:00 - 14:00)</option>
-                                    <option value="Tarde" class="bg-slate-800 text-white">2º Turno (14:00 - 22:00)</option>
-                                    <option value="Noite" class="bg-slate-800 text-white">3º Turno (22:00 - 06:00)</option>
-                                    <option value="Comercial" class="bg-slate-800 text-white">Turno Comercial (08:00 - 18:00)</option>
+                                    <option value="Diurno" data-inicio="07:00" data-fim="17:00" class="bg-slate-800 text-white">☀️ Diurno (07:00 - 17:00)</option>
+                                    <option value="Noturno" data-inicio="19:00" data-fim="05:00" class="bg-slate-800 text-white">🌙 Noturno (19:00 - 05:00)</option>
                                 </select>
                                 <i class="ph ph-sun absolute left-4 top-1/2 -translate-y-1/2 text-xl text-slate-500 input-icon pointer-events-none"></i>
                                 <i class="ph ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
@@ -531,6 +529,20 @@
             // Animação de glow ao atualizar
             displayElt.parentElement.classList.add('shadow-[0_0_30px_rgba(6,182,212,0.5)]');
             setTimeout(() => displayElt.parentElement.classList.remove('shadow-[0_0_30px_rgba(6,182,212,0.5)]'), 400);
+        }
+
+        // Preenche início/fim automaticamente conforme o turno escolhido (Diurno 07-17 / Noturno 19-05)
+        function aplicarTurno() {
+            const sel = document.getElementById('turno');
+            const opt = sel.options[sel.selectedIndex];
+            if (!opt) return;
+            const ini = opt.getAttribute('data-inicio');
+            const fim = opt.getAttribute('data-fim');
+            if (ini && fim) {
+                document.getElementById('inicio').value = ini;
+                document.getElementById('fim').value = fim;
+                calcularHoras();
+            }
         }
 
         form.addEventListener('submit', e => {
