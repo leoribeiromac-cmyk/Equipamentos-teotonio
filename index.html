@@ -154,6 +154,9 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
+                <button type="button" onclick="abrirUltimos()" class="flex items-center gap-2 bg-slate-900/50 hover:bg-slate-800/80 px-4 py-2.5 rounded-full border border-white/10 hover:border-violet-400/40 text-slate-300 hover:text-white text-xs font-semibold uppercase tracking-wider transition shadow-inner">
+                    <i class="ph ph-clock-counter-clockwise text-base text-violet-400"></i> Últimos
+                </button>
                 <button type="button" onclick="abrirCadastros()" class="flex items-center gap-2 bg-slate-900/50 hover:bg-slate-800/80 px-4 py-2.5 rounded-full border border-white/10 hover:border-cyan-500/40 text-slate-300 hover:text-white text-xs font-semibold uppercase tracking-wider transition shadow-inner">
                     <i class="ph ph-plus-circle text-base text-cyan-400"></i> Cadastros
                 </button>
@@ -467,6 +470,52 @@
         </div>
     </div>
 
+    <!-- ===================== MODAL DE CONFIRMAÇÃO ===================== -->
+    <div id="confirmModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="fecharConfirmacao()"></div>
+        <div class="glass-panel relative w-full max-w-lg rounded-[2rem] p-8">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="p-3 bg-slate-900 rounded-2xl border border-white/10"><i class="ph ph-seal-check text-2xl text-cyan-400"></i></div>
+                <div>
+                    <h2 class="text-xl font-bold text-white">Confirme antes de enviar</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Revise os dados do apontamento</p>
+                </div>
+            </div>
+            <div class="space-y-3 bg-slate-900/40 border border-white/5 rounded-2xl p-5 mb-6">
+                <div class="flex justify-between gap-4"><span class="text-xs uppercase tracking-wider text-slate-500">Data</span><span id="cfData" class="text-sm font-medium text-white text-right">—</span></div>
+                <div class="flex justify-between gap-4"><span class="text-xs uppercase tracking-wider text-slate-500">Turno</span><span id="cfTurno" class="text-sm font-medium text-white text-right">—</span></div>
+                <div class="flex justify-between gap-4"><span class="text-xs uppercase tracking-wider text-slate-500">Equipamento</span><span id="cfEquip" class="text-sm font-medium text-white text-right">—</span></div>
+                <div class="flex justify-between gap-4"><span class="text-xs uppercase tracking-wider text-slate-500">Operador</span><span id="cfOperador" class="text-sm font-medium text-white text-right">—</span></div>
+                <div class="flex justify-between gap-4"><span class="text-xs uppercase tracking-wider text-slate-500">Período</span><span id="cfPeriodo" class="text-sm font-medium text-white text-right">—</span></div>
+                <div class="flex justify-between gap-4"><span class="text-xs uppercase tracking-wider text-slate-500">Horas</span><span id="cfHoras" class="text-sm font-bold text-cyan-300 text-right">—</span></div>
+                <div class="flex justify-between gap-4"><span class="text-xs uppercase tracking-wider text-slate-500">Status</span><span id="cfStatus" class="text-sm font-medium text-white text-right">—</span></div>
+                <div class="pt-3 border-t border-white/5"><span class="text-xs uppercase tracking-wider text-slate-500 block mb-1">Observações</span><span id="cfObs" class="text-sm text-slate-300">—</span></div>
+            </div>
+            <div class="flex gap-3">
+                <button type="button" onclick="fecharConfirmacao()" class="flex-1 py-3.5 rounded-2xl border border-white/10 bg-slate-900/60 text-slate-300 hover:text-white hover:bg-slate-800 transition text-sm font-semibold">Voltar e revisar</button>
+                <button type="button" onclick="confirmarEnvio()" class="btn-gradient flex-1 py-3.5 rounded-2xl text-white text-sm font-bold uppercase tracking-wide flex items-center justify-center gap-2"><i class="ph ph-cloud-arrow-up text-lg"></i> Confirmar e transmitir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== MODAL ÚLTIMOS APONTAMENTOS ===================== -->
+    <div id="ultimosModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="fecharUltimos()"></div>
+        <div class="glass-panel relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2rem] p-8">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="p-3 bg-slate-900 rounded-2xl border border-white/10"><i class="ph ph-clock-counter-clockwise text-2xl text-violet-400"></i></div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Últimos apontamentos</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Confira e apague se algo saiu errado</p>
+                    </div>
+                </div>
+                <button type="button" onclick="fecharUltimos()" class="p-2 rounded-xl hover:bg-white/10 transition text-slate-400 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
+            </div>
+            <div id="listaUltimos" class="space-y-2"></div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-8 right-8 z-50 flex items-center p-5 rounded-2xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7)] backdrop-blur-xl border border-white/10 max-w-sm">
         <div id="toastIcon" class="flex items-center justify-center flex-shrink-0 w-12 h-12 rounded-xl mr-4 shadow-inner"></div>
@@ -564,6 +613,16 @@
             const textoDetalhado = `[Turno: ${turno}] | Operação: ${inicio} às ${fim} | Parada: ${iParada} às ${fParada}\nDetalhes: ${obsUsuario ? obsUsuario : 'Sem detalhes adicionais.'}`;
             
             document.getElementById('observacoes').value = textoDetalhado;
+
+            // Etapa 2 — valida as horas e abre a tela de confirmação.
+            // O envio real ao servidor acontece em enviarApontamento() ao confirmar.
+            const horasCalc = parseFloat(document.getElementById('horas').value || '0');
+            if (!horasCalc || horasCalc <= 0) {
+                showToast('Confira os horários: as horas calculadas estão zeradas.', 'error');
+                return;
+            }
+            abrirConfirmacao();
+            return;
 
             setLoading(true);
             const formData = new FormData(form);
@@ -777,6 +836,109 @@
                     popularDropdownEquip(); renderListas();
                     showToast('Equipamento removido da lista.', 'success');
                 } else { showToast(r.erro || 'Não foi possível remover.', 'error'); }
+            } catch (err) { showToast('Erro de conexão com o servidor.', 'error'); }
+        }
+
+        /* ===================== ENVIO COM CONFIRMAÇÃO + ÚLTIMOS (Etapa 2) ===================== */
+        const STATUS_LABEL = {
+            OperandoNormalmente: '🟢 Operando',
+            ManutencaoCorretiva: '🔴 Corretiva',
+            ManutencaoPreventiva: '🟡 Preventiva',
+            ParadoChuva: '🌧️ Parado (chuva)',
+            FaltaOperador: '👤 Falta operador',
+            FaltaFrenteServico: '🚧 Sem frente'
+        };
+        function rotuloStatus(s) { return STATUS_LABEL[s] || s || '—'; }
+        function formatarData(iso) {
+            if (!iso) return '—';
+            const p = String(iso).split('-');
+            return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : iso;
+        }
+
+        function abrirConfirmacao() {
+            const g = id => document.getElementById(id);
+            const set = (id, v) => { g(id).textContent = v || '—'; };
+            const st = g('status');
+            set('cfData', formatarData(g('data').value));
+            set('cfTurno', g('turno').value);
+            set('cfEquip', g('equipamento').value);
+            set('cfOperador', g('operador').value);
+            set('cfPeriodo', (g('inicio').value || '--:--') + ' às ' + (g('fim').value || '--:--'));
+            set('cfHoras', (g('horas').value || '0') + ' h');
+            set('cfStatus', (st.options[st.selectedIndex] ? st.options[st.selectedIndex].text : '—'));
+            set('cfObs', g('observacoesUI').value.trim() || 'Sem detalhes adicionais.');
+            g('confirmModal').classList.remove('hidden');
+        }
+        function fecharConfirmacao() { document.getElementById('confirmModal').classList.add('hidden'); }
+        function confirmarEnvio() { enviarApontamento(false); }
+
+        async function enviarApontamento(forcar) {
+            fecharConfirmacao();
+            setLoading(true);
+            try {
+                const fd = new FormData(form);
+                if (forcar) fd.append('forcar', 'true');
+                const resp = await fetch(scriptURL, { method: 'POST', body: fd });
+                const r = await resp.json();
+                if (r.ok) {
+                    showToast('Transmissão concluída com sucesso!', 'success');
+                    const tempDate = document.getElementById('data').value;
+                    form.reset();
+                    document.getElementById('data').value = tempDate;
+                    document.getElementById('status').value = 'OperandoNormalmente';
+                    document.getElementById('horasDisplay').innerHTML = '0.00<span class="text-xl text-slate-500 ml-1">h</span>';
+                } else if (r.duplicado) {
+                    if (confirm(r.erro + '\n\nDeseja registrar mesmo assim (2º apontamento)?')) {
+                        await enviarApontamento(true);
+                        return;
+                    }
+                    showToast('Envio cancelado — apontamento já existente.', 'error');
+                } else {
+                    showToast(r.erro || 'Não foi possível enviar.', 'error');
+                }
+            } catch (err) {
+                console.error('Error!', err);
+                showToast('Erro de conexão com o servidor. Tente novamente.', 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function abrirUltimos() { document.getElementById('ultimosModal').classList.remove('hidden'); carregarUltimos(); }
+        function fecharUltimos() { document.getElementById('ultimosModal').classList.add('hidden'); }
+
+        async function carregarUltimos() {
+            const box = document.getElementById('listaUltimos');
+            box.innerHTML = '<p class="text-sm text-slate-500 text-center py-6">Carregando...</p>';
+            try {
+                const resp = await fetch(scriptURL + '?action=ultimos&n=15');
+                const data = await resp.json();
+                const items = (data && data.apontamentos) || [];
+                if (!items.length) { box.innerHTML = '<p class="text-sm text-slate-600 text-center py-6">Nenhum apontamento ainda.</p>'; return; }
+                box.innerHTML = items.map(a => `
+                    <div class="flex items-center justify-between bg-slate-900/40 border border-white/5 rounded-xl px-4 py-3">
+                        <div class="min-w-0">
+                            <p class="text-sm font-medium text-white truncate">${escapeHtml(a.equipamento)} <span class="text-slate-500 font-normal">· ${escapeHtml(String(a.horas))}h</span></p>
+                            <p class="text-[11px] text-slate-500 truncate">${formatarData(a.data)} · ${escapeHtml(a.turno)} · ${escapeHtml(a.operador)} · ${rotuloStatus(a.status)}</p>
+                        </div>
+                        <button type="button" data-carimbo="${a.carimbo}" class="btn-apagar-apont ml-3 p-2 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition flex-shrink-0" title="Apagar este apontamento"><i class="ph ph-trash"></i></button>
+                    </div>`).join('');
+                box.querySelectorAll('.btn-apagar-apont').forEach(b => b.addEventListener('click', () => apagarApontamentoUI(b.getAttribute('data-carimbo'))));
+            } catch (err) {
+                box.innerHTML = '<p class="text-sm text-rose-400 text-center py-6">Erro ao carregar. Tente de novo.</p>';
+            }
+        }
+
+        async function apagarApontamentoUI(carimbo) {
+            if (!confirm('Apagar este apontamento? Esta ação não pode ser desfeita.')) return;
+            try {
+                const fd = new FormData();
+                fd.append('action', 'apagarApontamento');
+                fd.append('carimbo', carimbo);
+                const resp = await fetch(scriptURL, { method: 'POST', body: fd });
+                const r = await resp.json();
+                if (r.ok) { showToast('Apontamento apagado.', 'success'); carregarUltimos(); }
+                else { showToast(r.erro || 'Não foi possível apagar.', 'error'); }
             } catch (err) { showToast('Erro de conexão com o servidor.', 'error'); }
         }
 
