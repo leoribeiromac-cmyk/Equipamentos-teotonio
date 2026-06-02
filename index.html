@@ -318,6 +318,43 @@
                     <input type="hidden" id="horas" name="horas" value="0">
                 </div>
 
+                <!-- SESSÃO MEDIÇÕES (Etapa 3) -->
+                <div class="space-y-6 pt-6">
+                    <div class="flex items-center gap-4 mb-8">
+                        <div class="h-px bg-gradient-to-r from-amber-500/50 to-transparent flex-grow"></div>
+                        <h3 class="text-sm font-bold uppercase tracking-widest text-amber-300 flex items-center gap-2">
+                            <i class="ph ph-gauge text-lg"></i> Medições
+                        </h3>
+                        <div class="h-px bg-gradient-to-l from-amber-500/50 to-transparent flex-grow"></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6">
+                        <div class="relative">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 ml-1">Horímetro / km inicial</label>
+                            <div class="relative group">
+                                <input type="number" step="any" inputmode="decimal" id="horimInicial" name="horimInicial" placeholder="Ex.: 1234"
+                                    class="glass-input peer w-full pl-12 pr-4 py-4 rounded-2xl outline-none placeholder:text-slate-600">
+                                <i class="ph ph-gauge absolute left-4 top-1/2 -translate-y-1/2 text-xl text-slate-500 input-icon pointer-events-none"></i>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 ml-1">Horímetro / km final</label>
+                            <div class="relative group">
+                                <input type="number" step="any" inputmode="decimal" id="horimFinal" name="horimFinal" placeholder="Ex.: 1242"
+                                    class="glass-input peer w-full pl-12 pr-4 py-4 rounded-2xl outline-none placeholder:text-slate-600">
+                                <i class="ph ph-gauge absolute left-4 top-1/2 -translate-y-1/2 text-xl text-slate-500 input-icon pointer-events-none"></i>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 ml-1">Combustível (litros)</label>
+                            <div class="relative group">
+                                <input type="number" step="any" inputmode="decimal" id="combustivel" name="combustivel" placeholder="Ex.: 80"
+                                    class="glass-input peer w-full pl-12 pr-4 py-4 rounded-2xl outline-none placeholder:text-slate-600">
+                                <i class="ph ph-gas-pump absolute left-4 top-1/2 -translate-y-1/2 text-xl text-slate-500 input-icon pointer-events-none"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- SESSÃO 3: OCORRÊNCIAS -->
                 <div class="space-y-6 pt-6">
                     <div class="flex items-center gap-4 mb-8">
@@ -357,6 +394,28 @@
                             
                             <input type="hidden" id="observacoes" name="observacoes">
                         </div>
+                    </div>
+                </div>
+
+                <!-- SESSÃO ASSINATURA (Etapa 3) -->
+                <div class="space-y-6 pt-6">
+                    <div class="flex items-center gap-4 mb-8">
+                        <div class="h-px bg-gradient-to-r from-emerald-500/50 to-transparent flex-grow"></div>
+                        <h3 class="text-sm font-bold uppercase tracking-widest text-emerald-300 flex items-center gap-2">
+                            <i class="ph ph-signature text-lg"></i> Assinatura do Operador
+                        </h3>
+                        <div class="h-px bg-gradient-to-l from-emerald-500/50 to-transparent flex-grow"></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-2 ml-1">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Assine no quadro abaixo (opcional)</label>
+                            <button type="button" onclick="limparAssinatura()" class="text-[11px] text-rose-300/80 hover:text-rose-300 flex items-center gap-1"><i class="ph ph-eraser"></i> Limpar</button>
+                        </div>
+                        <div class="bg-slate-900/40 border border-white/10 rounded-2xl p-2">
+                            <canvas id="assinaturaCanvas" class="w-full rounded-xl bg-slate-950/60 touch-none cursor-crosshair" style="height:160px;"></canvas>
+                        </div>
+                        <p class="text-[10px] text-slate-500 mt-1 ml-1">Use o dedo (no celular) ou o mouse.</p>
+                        <input type="hidden" id="assinatura" name="assinatura">
                     </div>
                 </div>
 
@@ -489,6 +548,9 @@
                 <div class="flex justify-between gap-4"><span class="text-xs uppercase tracking-wider text-slate-500">Período</span><span id="cfPeriodo" class="text-sm font-medium text-white text-right">—</span></div>
                 <div class="flex justify-between gap-4"><span class="text-xs uppercase tracking-wider text-slate-500">Horas</span><span id="cfHoras" class="text-sm font-bold text-cyan-300 text-right">—</span></div>
                 <div class="flex justify-between gap-4"><span class="text-xs uppercase tracking-wider text-slate-500">Status</span><span id="cfStatus" class="text-sm font-medium text-white text-right">—</span></div>
+                <div class="flex justify-between gap-4"><span class="text-xs uppercase tracking-wider text-slate-500">Horímetro / km</span><span id="cfHorim" class="text-sm font-medium text-white text-right">—</span></div>
+                <div class="flex justify-between gap-4"><span class="text-xs uppercase tracking-wider text-slate-500">Combustível</span><span id="cfComb" class="text-sm font-medium text-white text-right">—</span></div>
+                <div class="flex justify-between gap-4"><span class="text-xs uppercase tracking-wider text-slate-500">Assinatura</span><span id="cfAssin" class="text-sm font-medium text-white text-right">—</span></div>
                 <div class="pt-3 border-t border-white/5"><span class="text-xs uppercase tracking-wider text-slate-500 block mb-1">Observações</span><span id="cfObs" class="text-sm text-slate-300">—</span></div>
             </div>
             <div class="flex gap-3">
@@ -866,6 +928,10 @@
             set('cfPeriodo', (g('inicio').value || '--:--') + ' às ' + (g('fim').value || '--:--'));
             set('cfHoras', (g('horas').value || '0') + ' h');
             set('cfStatus', (st.options[st.selectedIndex] ? st.options[st.selectedIndex].text : '—'));
+            const hi = g('horimInicial').value, hf = g('horimFinal').value;
+            set('cfHorim', (hi || hf) ? ((hi || '—') + ' → ' + (hf || '—')) : '—');
+            set('cfComb', g('combustivel').value ? (g('combustivel').value + ' L') : '—');
+            set('cfAssin', temAssinatura() ? '✔️ assinada' : '—');
             set('cfObs', g('observacoesUI').value.trim() || 'Sem detalhes adicionais.');
             g('confirmModal').classList.remove('hidden');
         }
@@ -876,6 +942,7 @@
             fecharConfirmacao();
             setLoading(true);
             try {
+                capturarAssinatura();
                 const fd = new FormData(form);
                 if (forcar) fd.append('forcar', 'true');
                 const resp = await fetch(scriptURL, { method: 'POST', body: fd });
@@ -887,6 +954,7 @@
                     document.getElementById('data').value = tempDate;
                     document.getElementById('status').value = 'OperandoNormalmente';
                     document.getElementById('horasDisplay').innerHTML = '0.00<span class="text-xl text-slate-500 ml-1">h</span>';
+                    limparAssinatura();
                 } else if (r.duplicado) {
                     if (confirm(r.erro + '\n\nDeseja registrar mesmo assim (2º apontamento)?')) {
                         await enviarApontamento(true);
@@ -942,8 +1010,43 @@
             } catch (err) { showToast('Erro de conexão com o servidor.', 'error'); }
         }
 
+        /* ===================== ASSINATURA NA TELA (Etapa 3) ===================== */
+        function initAssinatura() {
+            const canvas = document.getElementById('assinaturaCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const ratio = window.devicePixelRatio || 1;
+            const w = canvas.clientWidth || 600, h = 160;
+            canvas.width = w * ratio; canvas.height = h * ratio;
+            ctx.scale(ratio, ratio);
+            ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#e2e8f0';
+            let drawing = false, last = null, hasInk = false;
+            const posOf = e => { const r = canvas.getBoundingClientRect(); const t = (e.touches && e.touches[0]) ? e.touches[0] : e; return { x: t.clientX - r.left, y: t.clientY - r.top }; };
+            const start = e => { drawing = true; last = posOf(e); e.preventDefault(); };
+            const move = e => { if (!drawing) return; const p = posOf(e); ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p; hasInk = true; e.preventDefault(); };
+            const end = () => { drawing = false; };
+            canvas.addEventListener('mousedown', start);
+            canvas.addEventListener('mousemove', move);
+            window.addEventListener('mouseup', end);
+            canvas.addEventListener('touchstart', start, { passive: false });
+            canvas.addEventListener('touchmove', move, { passive: false });
+            canvas.addEventListener('touchend', end);
+            canvas._hasInk = () => hasInk;
+            canvas._clear = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); hasInk = false; };
+        }
+        function temAssinatura() { const c = document.getElementById('assinaturaCanvas'); return !!(c && c._hasInk && c._hasInk()); }
+        function limparAssinatura() { const c = document.getElementById('assinaturaCanvas'); if (c && c._clear) c._clear(); const h = document.getElementById('assinatura'); if (h) h.value = ''; }
+        function capturarAssinatura() {
+            const c = document.getElementById('assinaturaCanvas');
+            const h = document.getElementById('assinatura');
+            if (!h) return false;
+            if (temAssinatura()) { h.value = c.toDataURL('image/png'); return true; }
+            h.value = ''; return false;
+        }
+
         // Carrega as listas do motor ao abrir o app
         carregarListas();
+        initAssinatura();
     </script>
 </body>
 </html>
