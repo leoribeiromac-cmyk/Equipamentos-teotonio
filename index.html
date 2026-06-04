@@ -154,6 +154,9 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
+                <button type="button" onclick="abrirPainel()" class="flex items-center gap-2 bg-slate-900/50 hover:bg-slate-800/80 px-4 py-2.5 rounded-full border border-white/10 hover:border-emerald-400/40 text-slate-300 hover:text-white text-xs font-semibold uppercase tracking-wider transition shadow-inner">
+                    <i class="ph ph-chart-bar text-base text-emerald-400"></i> Painel
+                </button>
                 <button type="button" onclick="abrirUltimos()" class="flex items-center gap-2 bg-slate-900/50 hover:bg-slate-800/80 px-4 py-2.5 rounded-full border border-white/10 hover:border-violet-400/40 text-slate-300 hover:text-white text-xs font-semibold uppercase tracking-wider transition shadow-inner">
                     <i class="ph ph-clock-counter-clockwise text-base text-violet-400"></i> Últimos
                 </button>
@@ -571,6 +574,42 @@
                 <button type="button" onclick="fecharUltimos()" class="p-2 rounded-xl hover:bg-white/10 transition text-slate-400 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
             </div>
             <div id="listaUltimos" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <!-- ===================== PAINEL DE RELATÓRIOS ===================== -->
+    <div id="painelModal" class="fixed inset-0 z-50 hidden flex items-start justify-center p-4 overflow-y-auto">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="fecharPainel()"></div>
+        <div class="glass-panel relative w-full max-w-5xl my-8 rounded-[2rem] p-6 sm:p-8">
+            <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="p-3 bg-slate-900 rounded-2xl border border-white/10"><i class="ph ph-chart-bar text-2xl text-emerald-400"></i></div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Painel de Relatórios</h2>
+                        <p class="text-xs text-emerald-400/80 tracking-widest uppercase mt-0.5">Análise dos apontamentos</p>
+                    </div>
+                </div>
+                <button type="button" onclick="fecharPainel()" class="p-2 rounded-xl hover:bg-white/10 transition text-slate-400 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
+            </div>
+            <div class="flex flex-wrap items-end gap-3 mb-6">
+                <div>
+                    <label class="block text-[10px] uppercase tracking-wider text-slate-500 mb-1 ml-1">De</label>
+                    <input type="date" id="relDe" class="glass-input px-3 py-2.5 rounded-xl outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-[10px] uppercase tracking-wider text-slate-500 mb-1 ml-1">Até</label>
+                    <input type="date" id="relAte" class="glass-input px-3 py-2.5 rounded-xl outline-none text-sm">
+                </div>
+                <button type="button" onclick="carregarRelatorio()" class="btn-gradient text-white text-sm font-bold px-4 py-2.5 rounded-xl flex items-center gap-1"><i class="ph ph-funnel"></i> Aplicar</button>
+                <button type="button" onclick="periodoMes()" class="text-xs text-slate-300 hover:text-white bg-slate-900/60 border border-white/10 px-3 py-2.5 rounded-xl">Este mês</button>
+                <button type="button" onclick="periodoTudo()" class="text-xs text-slate-300 hover:text-white bg-slate-900/60 border border-white/10 px-3 py-2.5 rounded-xl">Tudo</button>
+                <div class="flex-grow"></div>
+                <button type="button" onclick="exportarCSV()" class="text-xs font-semibold text-emerald-300 hover:text-white bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-3 py-2.5 rounded-xl flex items-center gap-1"><i class="ph ph-file-xls"></i> Excel</button>
+                <button type="button" onclick="imprimirPainel()" class="text-xs font-semibold text-slate-200 hover:text-white bg-slate-900/60 border border-white/10 px-3 py-2.5 rounded-xl flex items-center gap-1"><i class="ph ph-printer"></i> Imprimir</button>
+            </div>
+            <div id="painelCorpo">
+                <p class="text-center text-slate-500 py-10">Carregando…</p>
+            </div>
         </div>
     </div>
 
@@ -1090,6 +1129,162 @@
             if (!h) return false;
             if (temAssinatura()) { h.value = c.toDataURL('image/png'); return true; }
             h.value = ''; return false;
+        }
+
+        /* ===================== PAINEL DE RELATÓRIOS (Etapa 4) ===================== */
+        let REL_DADOS = [];
+        let REL_AGG = null;
+        const JORNADA_H = 10; // horas padrão do turno (Diurno/Noturno = 10h) — base da utilização
+
+        function abrirPainel() { document.getElementById('painelModal').classList.remove('hidden'); carregarRelatorio(); }
+        function fecharPainel() { document.getElementById('painelModal').classList.add('hidden'); }
+
+        function periodoMes() {
+            const now = new Date(), y = now.getFullYear(), m = now.getMonth();
+            const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            document.getElementById('relDe').value = fmt(new Date(y, m, 1));
+            document.getElementById('relAte').value = fmt(new Date(y, m + 1, 0));
+            carregarRelatorio();
+        }
+        function periodoTudo() {
+            document.getElementById('relDe').value = '';
+            document.getElementById('relAte').value = '';
+            carregarRelatorio();
+        }
+
+        async function carregarRelatorio() {
+            const corpo = document.getElementById('painelCorpo');
+            corpo.innerHTML = '<p class="text-center text-slate-500 py-10">Carregando…</p>';
+            const de = document.getElementById('relDe').value, ate = document.getElementById('relAte').value;
+            try {
+                const url = scriptURL + '?action=relatorio' + (de ? '&de=' + de : '') + (ate ? '&ate=' + ate : '');
+                const data = await (await fetch(url)).json();
+                REL_DADOS = (data && data.apontamentos) || [];
+                REL_AGG = agregarRel(REL_DADOS);
+                renderPainel();
+            } catch (err) {
+                corpo.innerHTML = '<p class="text-center text-rose-400 py-10">Erro ao carregar. Tente de novo.</p>';
+            }
+        }
+
+        function locadoraDe(nome) {
+            const eq = (typeof EQUIPAMENTOS !== 'undefined') ? EQUIPAMENTOS.find(e => e.nome === nome) : null;
+            return (eq && eq.locadora) ? eq.locadora : '— sem locadora —';
+        }
+
+        function agregarRel(dados) {
+            const porEquip = {}, porStatus = {}, porLoc = {};
+            let totalHoras = 0, totalComb = 0;
+            dados.forEach(a => {
+                totalHoras += a.horas; totalComb += a.combustivel;
+                (porEquip[a.equipamento] = porEquip[a.equipamento] || { horas: 0, apont: 0, comb: 0 });
+                porEquip[a.equipamento].horas += a.horas; porEquip[a.equipamento].apont++; porEquip[a.equipamento].comb += a.combustivel;
+                const st = a.status || 'Sem status';
+                (porStatus[st] = porStatus[st] || { horas: 0, apont: 0 });
+                porStatus[st].horas += a.horas; porStatus[st].apont++;
+                const loc = locadoraDe(a.equipamento);
+                (porLoc[loc] = porLoc[loc] || { horas: 0, apont: 0 });
+                porLoc[loc].horas += a.horas; porLoc[loc].apont++;
+            });
+            const equips = Object.keys(porEquip).map(k => ({ nome: k, horas: porEquip[k].horas, apont: porEquip[k].apont, comb: porEquip[k].comb, util: porEquip[k].apont ? porEquip[k].horas / (porEquip[k].apont * JORNADA_H) : 0 })).sort((a, b) => b.horas - a.horas);
+            const status = Object.keys(porStatus).map(k => ({ nome: k, horas: porStatus[k].horas, apont: porStatus[k].apont })).sort((a, b) => b.horas - a.horas);
+            const locs = Object.keys(porLoc).map(k => ({ nome: k, horas: porLoc[k].horas, apont: porLoc[k].apont })).sort((a, b) => b.horas - a.horas);
+            return { total: dados.length, totalHoras, totalComb, nEquip: equips.length, utilMedia: dados.length ? totalHoras / (dados.length * JORNADA_H) : 0, equips, status, locs };
+        }
+
+        const numBR = n => Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+        function barraRel(valor, max, cor) {
+            const pct = max > 0 ? Math.round((valor / max) * 100) : 0;
+            return `<div class="h-2.5 rounded-full ${cor}" style="width:${Math.max(pct, 2)}%"></div>`;
+        }
+        function kpiRel(label, valor, icon, cor) {
+            return `<div class="bg-slate-900/50 border border-white/5 rounded-2xl p-4 text-center">
+                <i class="ph ${icon} text-2xl ${cor}"></i>
+                <p class="text-2xl font-bold text-white mt-1">${valor}</p>
+                <p class="text-[10px] uppercase tracking-wider text-slate-500 mt-0.5">${label}</p>
+            </div>`;
+        }
+        function secaoRel(titulo, conteudo) {
+            return `<div class="mb-6">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-slate-300 mb-3 flex items-center gap-3"><span class="h-px bg-white/10 flex-grow"></span>${titulo}<span class="h-px bg-white/10 flex-grow"></span></h3>
+                <div class="bg-slate-900/30 rounded-2xl p-4 divide-y divide-white/5">${conteudo || '<p class="text-slate-500 text-sm text-center py-2">Sem dados.</p>'}</div>
+            </div>`;
+        }
+
+        function renderPainel() {
+            const A = REL_AGG, corpo = document.getElementById('painelCorpo');
+            if (!A || !A.total) { corpo.innerHTML = '<p class="text-center text-slate-500 py-12">Nenhum apontamento no período.</p>'; return; }
+            let html = `<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+                ${kpiRel('Apontamentos', A.total, 'ph-list-checks', 'text-cyan-300')}
+                ${kpiRel('Horas totais', numBR(A.totalHoras) + 'h', 'ph-clock', 'text-emerald-300')}
+                ${kpiRel('Equipamentos', A.nEquip, 'ph-tractor', 'text-violet-300')}
+                ${kpiRel('Combustível', numBR(A.totalComb) + ' L', 'ph-gas-pump', 'text-amber-300')}
+                ${kpiRel('Utilização média', Math.round(A.utilMedia * 100) + '%', 'ph-gauge', 'text-rose-300')}
+            </div>`;
+            const maxE = A.equips[0] ? A.equips[0].horas : 0;
+            html += secaoRel('Horas por equipamento (ranking)', A.equips.map(e => `
+                <div class="py-2">
+                    <div class="flex justify-between text-sm mb-1 gap-2"><span class="text-slate-200 truncate">${escapeHtml(e.nome)}</span><span class="text-slate-400 flex-shrink-0">${numBR(e.horas)}h · ${Math.round(e.util * 100)}% · ${e.apont}x</span></div>
+                    ${barraRel(e.horas, maxE, 'bg-gradient-to-r from-emerald-500 to-cyan-500')}
+                </div>`).join(''));
+            const maxS = A.status[0] ? A.status[0].horas : 0;
+            html += secaoRel('Por situação / status', A.status.map(s => `
+                <div class="py-2">
+                    <div class="flex justify-between text-sm mb-1 gap-2"><span class="text-slate-200">${rotuloStatus(s.nome)}</span><span class="text-slate-400 flex-shrink-0">${numBR(s.horas)}h · ${s.apont}x</span></div>
+                    ${barraRel(s.horas, maxS, 'bg-gradient-to-r from-violet-500 to-rose-500')}
+                </div>`).join(''));
+            const maxL = A.locs[0] ? A.locs[0].horas : 0;
+            html += secaoRel('Por locadora', A.locs.map(l => `
+                <div class="py-2">
+                    <div class="flex justify-between text-sm mb-1 gap-2"><span class="text-slate-200 truncate">${escapeHtml(l.nome)}</span><span class="text-slate-400 flex-shrink-0">${numBR(l.horas)}h · ${l.apont}x</span></div>
+                    ${barraRel(l.horas, maxL, 'bg-gradient-to-r from-amber-500 to-orange-500')}
+                </div>`).join(''));
+            corpo.innerHTML = html;
+        }
+
+        function rotuloStatusTxt(s) { return String(rotuloStatus(s)).replace(/^[^\p{L}\p{N}]+/u, '').trim() || s; }
+
+        function exportarCSV() {
+            if (!REL_DADOS.length) { showToast('Nada para exportar no período.', 'error'); return; }
+            const head = ['Data', 'Turno', 'Equipamento', 'Operador', 'Horas', 'Status', 'Combustivel(L)', 'Locadora'];
+            const linhas = REL_DADOS.map(a => [a.data, a.turno, a.equipamento, a.operador, a.horas, rotuloStatusTxt(a.status), a.combustivel, locadoraDe(a.equipamento)]);
+            const csv = [head].concat(linhas).map(r => r.map(c => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+            const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'relatorio-equipamentos.csv';
+            a.click();
+        }
+
+        function imprimirPainel() {
+            if (!REL_AGG || !REL_AGG.total) { showToast('Nada para imprimir.', 'error'); return; }
+            const A = REL_AGG;
+            const de = document.getElementById('relDe').value, ate = document.getElementById('relAte').value;
+            const periodo = (de || ate) ? `${de || 'início'} a ${ate || 'hoje'}` : 'Todos os períodos';
+            const tabela = (titulo, rows) => `<h2>${titulo}</h2><table><tr><th>Item</th><th>Horas</th><th>Apont.</th></tr>${rows}</table>`;
+            const w = window.open('', '_blank');
+            if (!w) { showToast('Permita pop-ups para imprimir.', 'error'); return; }
+            w.document.write(`<html><head><title>Relatório de Equipamentos</title><style>
+                body{font-family:Arial,sans-serif;color:#111;margin:24px}h1{margin:0 0 4px;font-size:20px}h2{margin:18px 0 6px;font-size:15px}
+                .sub{color:#666;font-size:12px;margin-bottom:12px}table{border-collapse:collapse;width:100%;font-size:13px;margin-bottom:8px}
+                th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}th{background:#f3f4f6}
+                .kpis{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}.kpi{border:1px solid #ddd;border-radius:8px;padding:8px 14px}.kpi b{font-size:18px;display:block}
+            </style></head><body>
+                <h1>Relatório de Equipamentos — FrotaSync</h1>
+                <div class="sub">Período: ${periodo} &bull; Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+                <div class="kpis">
+                    <div class="kpi"><b>${A.total}</b>Apontamentos</div>
+                    <div class="kpi"><b>${numBR(A.totalHoras)}h</b>Horas totais</div>
+                    <div class="kpi"><b>${A.nEquip}</b>Equipamentos</div>
+                    <div class="kpi"><b>${numBR(A.totalComb)} L</b>Combustível</div>
+                    <div class="kpi"><b>${Math.round(A.utilMedia * 100)}%</b>Utilização média</div>
+                </div>
+                ${tabela('Horas por equipamento', A.equips.map(e => `<tr><td>${escapeHtml(e.nome)}</td><td>${numBR(e.horas)}h (${Math.round(e.util * 100)}%)</td><td>${e.apont}</td></tr>`).join(''))}
+                ${tabela('Por situação', A.status.map(s => `<tr><td>${escapeHtml(rotuloStatusTxt(s.nome))}</td><td>${numBR(s.horas)}h</td><td>${s.apont}</td></tr>`).join(''))}
+                ${tabela('Por locadora', A.locs.map(l => `<tr><td>${escapeHtml(l.nome)}</td><td>${numBR(l.horas)}h</td><td>${l.apont}</td></tr>`).join(''))}
+            </body></html>`);
+            w.document.close();
+            setTimeout(() => { w.print(); }, 350);
         }
 
         // Carrega as listas do motor ao abrir o app
