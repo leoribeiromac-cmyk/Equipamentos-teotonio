@@ -600,6 +600,12 @@
                     <label class="block text-[10px] uppercase tracking-wider text-slate-500 mb-1 ml-1">Até</label>
                     <input type="date" id="relAte" class="glass-input px-3 py-2.5 rounded-xl outline-none text-sm">
                 </div>
+                <div>
+                    <label class="block text-[10px] uppercase tracking-wider text-slate-500 mb-1 ml-1">Equipamento</label>
+                    <select id="relEquip" onchange="aplicarFiltroEquip()" class="glass-input px-3 py-2.5 rounded-xl outline-none text-sm appearance-none cursor-pointer min-w-[180px]">
+                        <option value="">Todos os equipamentos</option>
+                    </select>
+                </div>
                 <button type="button" onclick="carregarRelatorio()" class="btn-gradient text-white text-sm font-bold px-4 py-2.5 rounded-xl flex items-center gap-1"><i class="ph ph-funnel"></i> Aplicar</button>
                 <button type="button" onclick="periodoMes()" class="text-xs text-slate-300 hover:text-white bg-slate-900/60 border border-white/10 px-3 py-2.5 rounded-xl">Este mês</button>
                 <button type="button" onclick="periodoTudo()" class="text-xs text-slate-300 hover:text-white bg-slate-900/60 border border-white/10 px-3 py-2.5 rounded-xl">Tudo</button>
@@ -1132,6 +1138,7 @@
         }
 
         /* ===================== PAINEL DE RELATÓRIOS (Etapa 4) ===================== */
+        let REL_RAW = [];
         let REL_DADOS = [];
         let REL_AGG = null;
         const JORNADA_H = 10; // horas padrão do turno (Diurno/Noturno = 10h) — base da utilização
@@ -1159,12 +1166,27 @@
             try {
                 const url = scriptURL + '?action=relatorio' + (de ? '&de=' + de : '') + (ate ? '&ate=' + ate : '');
                 const data = await (await fetch(url)).json();
-                REL_DADOS = (data && data.apontamentos) || [];
-                REL_AGG = agregarRel(REL_DADOS);
-                renderPainel();
+                REL_RAW = (data && data.apontamentos) || [];
+                popularFiltroEquip();
+                aplicarFiltroEquip();
             } catch (err) {
                 corpo.innerHTML = '<p class="text-center text-rose-400 py-10">Erro ao carregar. Tente de novo.</p>';
             }
+        }
+
+        function popularFiltroEquip() {
+            const sel = document.getElementById('relEquip');
+            const atual = sel.value;
+            const nomes = [...new Set(REL_RAW.map(a => a.equipamento).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+            sel.innerHTML = '<option value="">Todos os equipamentos</option>' + nomes.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+            if (atual && nomes.indexOf(atual) !== -1) sel.value = atual;
+        }
+
+        function aplicarFiltroEquip() {
+            const eq = document.getElementById('relEquip').value;
+            REL_DADOS = eq ? REL_RAW.filter(a => a.equipamento === eq) : REL_RAW.slice();
+            REL_AGG = agregarRel(REL_DADOS);
+            renderPainel();
         }
 
         function locadoraDe(nome) {
