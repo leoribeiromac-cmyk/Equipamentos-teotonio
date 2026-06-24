@@ -6,6 +6,8 @@
     <title>Apontamento de Equipamentos Premium</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- SheetJS (com suporte a estilos) — geração de XLSX de medição -->
+    <script src="https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -610,9 +612,33 @@
                 <button type="button" onclick="periodoMes()" class="text-xs text-slate-300 hover:text-white bg-slate-900/60 border border-white/10 px-3 py-2.5 rounded-xl">Este mês</button>
                 <button type="button" onclick="periodoTudo()" class="text-xs text-slate-300 hover:text-white bg-slate-900/60 border border-white/10 px-3 py-2.5 rounded-xl">Tudo</button>
                 <div class="flex-grow"></div>
-                <button type="button" onclick="exportarCSV()" class="text-xs font-semibold text-emerald-300 hover:text-white bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-3 py-2.5 rounded-xl flex items-center gap-1"><i class="ph ph-file-xls"></i> Excel</button>
+                <button type="button" onclick="exportarCSV()" class="text-xs font-semibold text-slate-200 hover:text-white bg-slate-900/60 border border-white/10 px-3 py-2.5 rounded-xl flex items-center gap-1" title="Exporta os apontamentos do período filtrado em CSV (abre no Excel)"><i class="ph ph-file-csv"></i> CSV</button>
                 <button type="button" onclick="imprimirPainel()" class="text-xs font-semibold text-slate-200 hover:text-white bg-slate-900/60 border border-white/10 px-3 py-2.5 rounded-xl flex items-center gap-1"><i class="ph ph-printer"></i> Imprimir</button>
             </div>
+
+            <!-- ===== MEDIÇÃO MENSAL DE ENGENHARIA (XLSX por equipamento) ===== -->
+            <div class="bg-emerald-950/20 border border-emerald-500/25 rounded-2xl p-4 sm:p-5 mb-6">
+                <div class="flex items-center gap-2 mb-3">
+                    <i class="ph ph-file-xls text-emerald-300 text-xl"></i>
+                    <h3 class="text-sm font-bold text-emerald-200 uppercase tracking-wider">Medição mensal (Excel)</h3>
+                </div>
+                <p class="text-[11px] text-slate-400 mb-4 leading-relaxed">
+                    Gera uma planilha <strong>.xlsx</strong> pronta para a engenharia: uma aba de <strong>Resumo Geral</strong> mais
+                    <strong>uma aba por equipamento</strong>, com tabela diária (horas, paradas, horímetro, combustível, situação),
+                    totais e indicadores de utilização. Se um equipamento estiver selecionado acima, a medição sai só dele; caso contrário, sai de toda a frota.
+                </p>
+                <div class="flex flex-wrap items-end gap-3">
+                    <div>
+                        <label class="block text-[10px] uppercase tracking-wider text-slate-500 mb-1 ml-1">Mês de referência</label>
+                        <input type="month" id="medMes" class="glass-input px-3 py-2.5 rounded-xl outline-none text-sm">
+                    </div>
+                    <button type="button" onclick="gerarMedicaoMensal()" id="btnMedicao" class="btn-gradient text-white text-sm font-bold px-5 py-2.5 rounded-xl flex items-center gap-2">
+                        <i class="ph ph-download-simple text-lg"></i> Gerar medição (.xlsx)
+                    </button>
+                    <span id="medStatus" class="text-[11px] text-slate-500"></span>
+                </div>
+            </div>
+
             <div id="painelCorpo">
                 <p class="text-center text-slate-500 py-10">Carregando…</p>
             </div>
@@ -773,29 +799,14 @@
                 showToast('Confira os horários: as horas calculadas estão zeradas.', 'error');
                 return;
             }
+            // Sanidade do horímetro/km: o final não pode ser menor que o inicial
+            const hi = parseFloat(document.getElementById('horimInicial').value || '');
+            const hf = parseFloat(document.getElementById('horimFinal').value || '');
+            if (!isNaN(hi) && !isNaN(hf) && hf < hi) {
+                showToast('Horímetro/km final está menor que o inicial. Revise as medições.', 'error');
+                return;
+            }
             abrirConfirmacao();
-            return;
-
-            setLoading(true);
-            const formData = new FormData(form);
-
-            fetch(scriptURL, { method: 'POST', body: formData })
-                .then(response => {
-                    showToast('Transmissão concluída com sucesso!', 'success');
-                    
-                    const tempDate = document.getElementById('data').value;
-                    form.reset();
-                    document.getElementById('data').value = tempDate;
-                    document.getElementById('status').value = "OperandoNormalmente";
-                    document.getElementById('horasDisplay').innerHTML = '0.00<span class="text-xl text-slate-500 ml-1">h</span>';
-                })
-                .catch(error => {
-                    console.error('Error!', error.message);
-                    showToast('Erro de conexão com o servidor. Tente novamente.', 'error');
-                })
-                .finally(() => {
-                    setLoading(false);
-                });
         });
 
         function setLoading(isLoading) {
@@ -1198,15 +1209,16 @@
             const porEquip = {}, porStatus = {}, porLoc = {};
             let totalHoras = 0, totalComb = 0;
             dados.forEach(a => {
-                totalHoras += a.horas; totalComb += a.combustivel;
+                const h = num(a.horas), c = num(a.combustivel);
+                totalHoras += h; totalComb += c;
                 (porEquip[a.equipamento] = porEquip[a.equipamento] || { horas: 0, apont: 0, comb: 0 });
-                porEquip[a.equipamento].horas += a.horas; porEquip[a.equipamento].apont++; porEquip[a.equipamento].comb += a.combustivel;
+                porEquip[a.equipamento].horas += h; porEquip[a.equipamento].apont++; porEquip[a.equipamento].comb += c;
                 const st = a.status || 'Sem status';
                 (porStatus[st] = porStatus[st] || { horas: 0, apont: 0 });
-                porStatus[st].horas += a.horas; porStatus[st].apont++;
+                porStatus[st].horas += h; porStatus[st].apont++;
                 const loc = locadoraDe(a.equipamento);
                 (porLoc[loc] = porLoc[loc] || { horas: 0, apont: 0 });
-                porLoc[loc].horas += a.horas; porLoc[loc].apont++;
+                porLoc[loc].horas += h; porLoc[loc].apont++;
             });
             const equips = Object.keys(porEquip).map(k => ({ nome: k, horas: porEquip[k].horas, apont: porEquip[k].apont, comb: porEquip[k].comb, util: porEquip[k].apont ? porEquip[k].horas / (porEquip[k].apont * JORNADA_H) : 0 })).sort((a, b) => b.horas - a.horas);
             const status = Object.keys(porStatus).map(k => ({ nome: k, horas: porStatus[k].horas, apont: porStatus[k].apont })).sort((a, b) => b.horas - a.horas);
@@ -1278,6 +1290,291 @@
             a.click();
         }
 
+        /* ===================== MEDIÇÃO MENSAL — XLSX por equipamento ===================== */
+        // Conversão numérica tolerante (aceita "1.234,5", "80", número, vazio…)
+        const num = v => {
+            if (typeof v === 'number') return isFinite(v) ? v : 0;
+            let s = String(v == null ? '' : v).trim();
+            if (!s) return 0;
+            if (s.indexOf(',') > -1 && s.indexOf('.') > -1) s = s.replace(/\./g, '').replace(',', '.');
+            else s = s.replace(',', '.');
+            const n = parseFloat(s);
+            return isNaN(n) ? 0 : n;
+        };
+        const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+        function nomeMes(mesStr) { const p = String(mesStr).split('-'); const m = parseInt(p[1], 10); return `${MESES_PT[m - 1] || '?'} / ${p[0]}`; }
+        function diaSemanaBR(iso) { const d = new Date(iso + 'T12:00:00'); return isNaN(d.getTime()) ? '' : ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][d.getDay()]; }
+
+        // Extrai início/fim/paradas/detalhes do texto de observação salvo no apontamento
+        function parseObs(obs) {
+            const t = String(obs || '');
+            const op = t.match(/Opera[çc][ãa]o:\s*([0-9]{1,2}:[0-9]{2})\s*[àa]s\s*([0-9]{1,2}:[0-9]{2})/i);
+            const par = t.match(/Paradas:\s*([^\n]*)/i);
+            const det = t.match(/Detalhes:\s*([\s\S]*)$/i);
+            let paradas = par ? par[1].trim() : '';
+            if (/^sem paradas/i.test(paradas)) paradas = '';
+            let detalhes = det ? det[1].trim() : '';
+            if (/^sem detalhes/i.test(detalhes)) detalhes = '';
+            return { inicio: op ? op[1] : '', fim: op ? op[2] : '', paradas, detalhes };
+        }
+
+        // Situação simplificada para a engenharia
+        const STATUS_MED = {
+            OperandoNormalmente: 'Produtivo',
+            ManutencaoCorretiva: 'Corretiva',
+            ManutencaoPreventiva: 'Preventiva',
+            ParadoChuva: 'Chuva',
+            FaltaOperador: 'Falta operador',
+            FaltaFrenteServico: 'Sem frente'
+        };
+        function statusMed(s) { return STATUS_MED[s] || rotuloStatusTxt(s) || 'Sem status'; }
+        function infoEquipMed(nome) {
+            const eq = (typeof EQUIPAMENTOS !== 'undefined' ? EQUIPAMENTOS : []).find(e => e.nome === nome) || {};
+            return { tipo: eq.tipo || '—', vinculo: eq.vinculo || '—', locadora: eq.locadora || '—' };
+        }
+
+        // ---- Estilos da planilha (xlsx-js-style) ----
+        function bordaFina() { const s = { style: 'thin', color: { rgb: 'CBD5E1' } }; return { top: s, bottom: s, left: s, right: s }; }
+        const STL = {
+            titulo:    { font: { bold: true, sz: 15, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '0F172A' } }, alignment: { horizontal: 'center', vertical: 'center' } },
+            subtitulo: { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '0E7490' } }, alignment: { horizontal: 'center', vertical: 'center' } },
+            rotulo:    { font: { bold: true, sz: 10, color: { rgb: '334155' } }, fill: { fgColor: { rgb: 'F1F5F9' } }, alignment: { vertical: 'center' }, border: bordaFina() },
+            valor:     { font: { sz: 10, color: { rgb: '0F172A' } }, alignment: { vertical: 'center' }, border: bordaFina() },
+            valorNum:  { font: { sz: 10, color: { rgb: '0F172A' } }, alignment: { horizontal: 'right', vertical: 'center' }, border: bordaFina(), numFmt: '#,##0.00' },
+            th:        { font: { bold: true, sz: 10, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '0E7490' } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: bordaFina() },
+            td:        { font: { sz: 10 }, alignment: { vertical: 'center', wrapText: true }, border: bordaFina() },
+            tdC:       { font: { sz: 10 }, alignment: { horizontal: 'center', vertical: 'center' }, border: bordaFina() },
+            tdInt:     { font: { sz: 10 }, alignment: { horizontal: 'center', vertical: 'center' }, border: bordaFina(), numFmt: '0' },
+            tdNum:     { font: { sz: 10 }, alignment: { horizontal: 'right', vertical: 'center' }, border: bordaFina(), numFmt: '#,##0.00' },
+            tdPct:     { font: { sz: 10 }, alignment: { horizontal: 'center', vertical: 'center' }, border: bordaFina(), numFmt: '0%' },
+            total:     { font: { bold: true, sz: 10, color: { rgb: '0F172A' } }, fill: { fgColor: { rgb: 'E2E8F0' } }, alignment: { horizontal: 'center', vertical: 'center' }, border: bordaFina() },
+            totalNum:  { font: { bold: true, sz: 10, color: { rgb: '0F172A' } }, fill: { fgColor: { rgb: 'E2E8F0' } }, alignment: { horizontal: 'right', vertical: 'center' }, border: bordaFina(), numFmt: '#,##0.00' },
+            totalPct:  { font: { bold: true, sz: 10, color: { rgb: '0F172A' } }, fill: { fgColor: { rgb: 'E2E8F0' } }, alignment: { horizontal: 'center', vertical: 'center' }, border: bordaFina(), numFmt: '0%' }
+        };
+        const T  = (v, s) => ({ v: v == null ? '' : String(v), t: 's', s: s || STL.td });
+        const N  = (v, s) => ({ v: num(v),  t: 'n', s: s || STL.tdNum });
+        const I  = (v, s) => ({ v: num(v),  t: 'n', s: s || STL.tdInt });
+        const P  = (v, s) => ({ v: num(v),  t: 'n', s: s || STL.tdPct });
+
+        // Constrói uma worksheet a partir de uma matriz de células {v,t,s} (ou valores crus)
+        function montarSheet(matriz) {
+            const aoa = matriz.map(r => r.map(c => (c && typeof c === 'object' && 'v' in c) ? c.v : (c == null ? '' : c)));
+            const ws = XLSX.utils.aoa_to_sheet(aoa);
+            matriz.forEach((row, R) => row.forEach((cell, C) => {
+                if (cell && typeof cell === 'object' && 'v' in cell) {
+                    const addr = XLSX.utils.encode_cell({ r: R, c: C });
+                    const o = ws[addr] || (ws[addr] = { t: cell.t || 's', v: cell.v });
+                    if (cell.t) o.t = cell.t;
+                    if (cell.s) o.s = cell.s;
+                }
+            }));
+            return ws;
+        }
+        function nomeAbaSeguro(nome, usados) {
+            let base = String(nome || 'Equip').replace(/[\\\/\?\*\[\]:]/g, ' ').trim().slice(0, 28) || 'Equip';
+            let nm = base, i = 2;
+            while (usados.has(nm.toLowerCase())) { nm = (base.slice(0, 25) + ' ' + i).slice(0, 31); i++; }
+            usados.add(nm.toLowerCase());
+            return nm;
+        }
+
+        // Estatística de um equipamento no mês
+        function estatEquip(lista) {
+            let horas = 0, comb = 0, horasProd = 0;
+            const porStatus = {};
+            let horimMin = null, horimMax = null;
+            lista.forEach(a => {
+                const h = num(a.horas);
+                horas += h; comb += num(a.combustivel);
+                if (a.status === 'OperandoNormalmente') horasProd += h;
+                const k = statusMed(a.status);
+                porStatus[k] = (porStatus[k] || 0) + 1;
+                const hi = num(a.horimInicial), hf = num(a.horimFinal);
+                if (hi > 0) horimMin = horimMin === null ? hi : Math.min(horimMin, hi);
+                if (hf > 0) horimMax = horimMax === null ? hf : Math.max(horimMax, hf);
+            });
+            const dias = lista.length;
+            const deltaHorim = (horimMin !== null && horimMax !== null && horimMax >= horimMin) ? horimMax - horimMin : 0;
+            return { dias, horas, horasProd, comb, porStatus, deltaHorim, util: dias ? horas / (dias * JORNADA_H) : 0, lph: horas > 0 ? comb / horas : 0 };
+        }
+
+        async function gerarMedicaoMensal() {
+            const mesEl = document.getElementById('medMes');
+            const stEl = document.getElementById('medStatus');
+            const btn = document.getElementById('btnMedicao');
+            const mes = mesEl.value;
+            if (!mes) { showToast('Escolha o mês de referência da medição.', 'error'); return; }
+            if (typeof XLSX === 'undefined') { showToast('A biblioteca de Excel não carregou. Verifique a conexão e recarregue.', 'error'); return; }
+
+            const [y, m] = mes.split('-').map(Number);
+            const ultimoDia = new Date(y, m, 0).getDate();
+            const de = `${y}-${String(m).padStart(2, '0')}-01`;
+            const ate = `${y}-${String(m).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
+
+            btn.disabled = true; btn.classList.add('opacity-60', 'cursor-wait');
+            stEl.textContent = 'Buscando apontamentos…';
+            try {
+                const url = scriptURL + '?action=relatorio&de=' + de + '&ate=' + ate;
+                const data = await (await fetch(url)).json();
+                let dados = (data && data.apontamentos) || [];
+                const eqFiltro = document.getElementById('relEquip').value;
+                if (eqFiltro) dados = dados.filter(a => a.equipamento === eqFiltro);
+                // Garante que cai só no mês pedido mesmo se o backend ignorar o filtro
+                dados = dados.filter(a => String(a.data || '').slice(0, 7) === mes);
+                if (!dados.length) { stEl.textContent = ''; showToast('Nenhum apontamento encontrado nesse mês.', 'error'); return; }
+                stEl.textContent = 'Montando planilha…';
+                construirWorkbookMedicao(dados, mes, eqFiltro);
+                stEl.textContent = `✓ ${dados.length} apontamento(s) exportado(s).`;
+                showToast('Medição gerada com sucesso!', 'success');
+            } catch (err) {
+                console.error(err);
+                stEl.textContent = '';
+                showToast('Erro ao gerar a medição. Tente novamente.', 'error');
+            } finally {
+                btn.disabled = false; btn.classList.remove('opacity-60', 'cursor-wait');
+            }
+        }
+
+        function construirWorkbookMedicao(dados, mes, eqFiltro) {
+            const mesLabel = nomeMes(mes);
+            const geradoEm = new Date().toLocaleString('pt-BR');
+            const grupos = {};
+            dados.forEach(a => { const k = a.equipamento || 'Sem equipamento'; (grupos[k] = grupos[k] || []).push(a); });
+            const nomes = Object.keys(grupos).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+            const wb = XLSX.utils.book_new();
+            wb.Props = { Title: 'Medição mensal de equipamentos', Subject: mesLabel, Author: 'FrotaSync' };
+
+            /* ---------- ABA: RESUMO GERAL ---------- */
+            const colsResumo = ['Equipamento','Tipo','Vínculo','Locadora','Dias apont.','Horas trab.','Horas produt.','Utilização','Combustível (L)','Consumo (L/h)','Δ Horímetro','Corretiva (d)','Preventiva (d)','Chuva (d)','Sem operador (d)','Sem frente (d)'];
+            const nC = colsResumo.length;
+            const M = [];
+            M.push([T('MEDIÇÃO MENSAL DE EQUIPAMENTOS — RESUMO GERAL', STL.titulo), ...Array(nC - 1).fill(T('', STL.titulo))]);
+            M.push([T(mesLabel + (eqFiltro ? '  •  ' + eqFiltro : '  •  Frota completa'), STL.subtitulo), ...Array(nC - 1).fill(T('', STL.subtitulo))]);
+            M.push([T('Gerado em ' + geradoEm + '  •  Jornada de referência: ' + JORNADA_H + 'h/dia', STL.valor), ...Array(nC - 1).fill(T('', STL.valor))]);
+            M.push(Array(nC).fill(T('', STL.valor)));
+            M.push(colsResumo.map(c => T(c, STL.th)));
+
+            let tDias = 0, tHoras = 0, tProd = 0, tComb = 0, tDelta = 0;
+            const tStat = {};
+            nomes.forEach(nome => {
+                const e = estatEquip(grupos[nome]);
+                const info = infoEquipMed(nome);
+                tDias += e.dias; tHoras += e.horas; tProd += e.horasProd; tComb += e.comb; tDelta += e.deltaHorim;
+                ['Corretiva','Preventiva','Chuva','Falta operador','Sem frente'].forEach(k => { tStat[k] = (tStat[k] || 0) + (e.porStatus[k] || 0); });
+                M.push([
+                    T(nome, STL.td), T(info.tipo, STL.tdC), T(info.vinculo, STL.tdC), T(info.locadora, STL.td),
+                    I(e.dias), N(e.horas), N(e.horasProd), P(e.util), N(e.comb), N(e.lph), N(e.deltaHorim),
+                    I(e.porStatus['Corretiva'] || 0), I(e.porStatus['Preventiva'] || 0), I(e.porStatus['Chuva'] || 0),
+                    I(e.porStatus['Falta operador'] || 0), I(e.porStatus['Sem frente'] || 0)
+                ]);
+            });
+            const utilTot = tDias ? tHoras / (tDias * JORNADA_H) : 0;
+            const lphTot = tHoras > 0 ? tComb / tHoras : 0;
+            M.push([
+                T('TOTAL', STL.total), T('', STL.total), T('', STL.total), T('', STL.total),
+                I(tDias, STL.total), N(tHoras, STL.totalNum), N(tProd, STL.totalNum), P(utilTot, STL.totalPct), N(tComb, STL.totalNum), N(lphTot, STL.totalNum), N(tDelta, STL.totalNum),
+                I(tStat['Corretiva'] || 0, STL.total), I(tStat['Preventiva'] || 0, STL.total), I(tStat['Chuva'] || 0, STL.total),
+                I(tStat['Falta operador'] || 0, STL.total), I(tStat['Sem frente'] || 0, STL.total)
+            ]);
+
+            const wsR = montarSheet(M);
+            wsR['!cols'] = [{ wch: 26 }, { wch: 14 }, { wch: 10 }, { wch: 20 }, { wch: 10 }, { wch: 11 }, { wch: 12 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 11 }, { wch: 12 }, { wch: 10 }, { wch: 14 }, { wch: 12 }];
+            wsR['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: nC - 1 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: nC - 1 } },
+                { s: { r: 2, c: 0 }, e: { r: 2, c: nC - 1 } }
+            ];
+            wsR['!rows'] = [{ hpt: 24 }, { hpt: 18 }, { hpt: 16 }];
+            wsR['!freeze'] = { xSplit: 0, ySplit: 5 };
+            XLSX.utils.book_append_sheet(wb, wsR, 'Resumo Geral');
+
+            /* ---------- ABA POR EQUIPAMENTO ---------- */
+            const usados = new Set();
+            const colsDia = ['Data','Dia','Turno','Operador','Início','Fim','Paradas','Horas trab.','Horím. ini.','Horím. fim','Δ Horím.','Comb. (L)','Situação','Observações'];
+            const nD = colsDia.length;
+            nomes.forEach(nome => {
+                const lista = grupos[nome].slice().sort((a, b) => String(a.data).localeCompare(String(b.data)));
+                const e = estatEquip(lista);
+                const info = infoEquipMed(nome);
+                const D = [];
+                const vazia = () => Array(nD).fill(T('', STL.valor));
+
+                D.push([T('MEDIÇÃO MENSAL DE EQUIPAMENTO', STL.titulo), ...Array(nD - 1).fill(T('', STL.titulo))]);
+                D.push([T(nome + '  •  ' + mesLabel, STL.subtitulo), ...Array(nD - 1).fill(T('', STL.subtitulo))]);
+                D.push(vazia());
+                // Ficha do equipamento
+                D.push([T('Tipo', STL.rotulo), T(info.tipo, STL.valor), T('Vínculo', STL.rotulo), T(info.vinculo, STL.valor), T('Locadora', STL.rotulo), T(info.locadora, STL.valor), ...Array(nD - 6).fill(T('', STL.valor))]);
+                // KPIs
+                D.push([
+                    T('Dias apont.', STL.rotulo), I(e.dias, STL.valor),
+                    T('Horas trab.', STL.rotulo), N(e.horas, STL.valorNum),
+                    T('Utilização', STL.rotulo), P(e.util, Object.assign({}, STL.valor, { numFmt: '0%', alignment: { horizontal: 'right', vertical: 'center' } })),
+                    ...Array(nD - 6).fill(T('', STL.valor))
+                ]);
+                D.push([
+                    T('Combustível', STL.rotulo), N(e.comb, STL.valorNum),
+                    T('Consumo L/h', STL.rotulo), N(e.lph, STL.valorNum),
+                    T('Δ Horímetro', STL.rotulo), N(e.deltaHorim, STL.valorNum),
+                    ...Array(nD - 6).fill(T('', STL.valor))
+                ]);
+                D.push(vazia());
+                // Cabeçalho da tabela diária
+                const headRow = D.length;
+                D.push(colsDia.map(c => T(c, STL.th)));
+                // Linhas diárias
+                lista.forEach(a => {
+                    const o = parseObs(a.observacoes);
+                    const hi = num(a.horimInicial), hf = num(a.horimFinal);
+                    const delta = (hi > 0 && hf >= hi) ? hf - hi : 0;
+                    D.push([
+                        T(formatarData(a.data), STL.tdC),
+                        T(diaSemanaBR(a.data), STL.tdC),
+                        T(a.turno || '', STL.tdC),
+                        T(a.operador || '', STL.td),
+                        T(o.inicio, STL.tdC),
+                        T(o.fim, STL.tdC),
+                        T(o.paradas || '—', STL.td),
+                        N(a.horas),
+                        hi > 0 ? N(hi) : T('—', STL.tdC),
+                        hf > 0 ? N(hf) : T('—', STL.tdC),
+                        delta > 0 ? N(delta) : T('—', STL.tdC),
+                        N(a.combustivel),
+                        T(statusMed(a.status), STL.tdC),
+                        T(o.detalhes || '', STL.td)
+                    ]);
+                });
+                // Totais
+                D.push([
+                    T('TOTAIS', STL.total), T('', STL.total), T('', STL.total), T('', STL.total), T('', STL.total), T('', STL.total),
+                    T(e.dias + ' dia(s)', STL.total), N(e.horas, STL.totalNum),
+                    T('', STL.total), T('', STL.total), N(e.deltaHorim, STL.totalNum), N(e.comb, STL.totalNum),
+                    T('', STL.total), T('', STL.total)
+                ]);
+                // Resumo por situação (dias)
+                D.push(vazia());
+                D.push([T('Resumo por situação (dias):', STL.rotulo), ...Array(nD - 1).fill(T('', STL.valor))]);
+                const ordemSit = ['Produtivo','Corretiva','Preventiva','Chuva','Falta operador','Sem frente'];
+                Object.keys(e.porStatus).filter(k => ordemSit.indexOf(k) === -1).forEach(k => ordemSit.push(k));
+                ordemSit.filter(k => e.porStatus[k]).forEach(k => {
+                    D.push([T(k, STL.valor), I(e.porStatus[k], STL.valorNum), ...Array(nD - 2).fill(T('', STL.valor))]);
+                });
+
+                const ws = montarSheet(D);
+                ws['!cols'] = [{ wch: 11 }, { wch: 5 }, { wch: 9 }, { wch: 20 }, { wch: 7 }, { wch: 7 }, { wch: 24 }, { wch: 10 }, { wch: 11 }, { wch: 11 }, { wch: 10 }, { wch: 10 }, { wch: 14 }, { wch: 34 }];
+                ws['!merges'] = [
+                    { s: { r: 0, c: 0 }, e: { r: 0, c: nD - 1 } },
+                    { s: { r: 1, c: 0 }, e: { r: 1, c: nD - 1 } }
+                ];
+                ws['!rows'] = [{ hpt: 24 }, { hpt: 18 }];
+                ws['!freeze'] = { xSplit: 0, ySplit: headRow + 1 };
+                XLSX.utils.book_append_sheet(wb, ws, nomeAbaSeguro(nome, usados));
+            });
+
+            const sufixo = eqFiltro ? '_' + String(eqFiltro).replace(/[^\w\-]+/g, '-').slice(0, 24) : '';
+            XLSX.writeFile(wb, `Medicao_${mes}${sufixo}.xlsx`);
+        }
+
         function imprimirPainel() {
             if (!REL_AGG || !REL_AGG.total) { showToast('Nada para imprimir.', 'error'); return; }
             const A = REL_AGG;
@@ -1308,6 +1605,21 @@
             w.document.close();
             setTimeout(() => { w.print(); }, 350);
         }
+
+        // Fecha qualquer modal aberto com a tecla Esc (UX)
+        document.addEventListener('keydown', e => {
+            if (e.key !== 'Escape') return;
+            ['cadastroModal', 'confirmModal', 'ultimosModal', 'painelModal'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && !el.classList.contains('hidden')) el.classList.add('hidden');
+            });
+        });
+
+        // Mês de medição inicia no mês corrente
+        (function () {
+            const m = document.getElementById('medMes');
+            if (m && !m.value) { const n = new Date(); m.value = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`; }
+        })();
 
         // Carrega as listas do motor ao abrir o app
         carregarListas();
